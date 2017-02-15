@@ -27,7 +27,7 @@ class WeatherSnapshot(object):
         return self.particulate_matter
 
     def __str__(self):
-        return "Weather Condition: " + str(self.weather_conditions) + ", Temperature in Celcius: " + \
+        return "Weather Condition: " + str(self.weather_conditions) + ", Temperature in Celsius: " + \
                str(self.temperature_in_celsius) + ", Particulate Matter: " + str(self.particulate_matter)
 
 ########################################################################################################################
