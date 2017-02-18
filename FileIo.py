@@ -1,4 +1,8 @@
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 """Return text file contents as a list"""
+
+
 def get_text_file_contents(file_name):
     text_file = open(file_name, "r")
     text_file_contents = text_file.readlines()
