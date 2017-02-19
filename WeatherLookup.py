@@ -17,7 +17,9 @@ import FileIo as FileIo
 
 class WeatherSnapshot(object):
 
-    """Constructor"""
+    """
+    Constructor
+    """
     def __init__(self, weather_conditions, temperature_in_celsius, particulate_matter):
         self.weather_conditions = int(weather_conditions)
         self.temperature_in_celsius = float(temperature_in_celsius)
@@ -92,7 +94,7 @@ class WeatherLookup(object):
 
                 record_tokens = record.split(FileIo.TAB_CHARACTER)
                 unsorted_weather_data[record_tokens[0]] \
-                    = WeatherSnapshot(int(record_tokens[1]), float(record_tokens[2]), float(record_tokens[3].strip()))
+                    = WeatherSnapshot(record_tokens[1], record_tokens[2], record_tokens[3].strip())
 
         # Sort the weather data so that searching on timestamp is possible
         self.weather_data = OrderedDict(sorted(unsorted_weather_data.items(),
