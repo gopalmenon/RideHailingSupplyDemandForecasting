@@ -45,11 +45,6 @@ class WeatherSnapshot(object):
 
 class WeatherLookup(object):
 
-    TAB_CHARACTER = "\t"
-
-    TRAINING_DATA_SET = "train"
-    TEST_DATA_SET = "test"
-
     TRAINING_DATA_WEATHER_FILES_PATH = "data/season_1/training_data/weather_data/"
     TRAINING_DATA_WEATHER_FILES = ["weather_data_2016-01-01", "weather_data_2016-01-02", "weather_data_2016-01-03",
                                    "weather_data_2016-01-04", "weather_data_2016-01-05", "weather_data_2016-01-06",
@@ -76,7 +71,7 @@ class WeatherLookup(object):
         # Initialize files list based on which environment is being worked on
         data_files_path = None
         data_files_list = None
-        if self.data_set == WeatherLookup.TRAINING_DATA_SET:
+        if self.data_set == FileIo.TRAINING_DATA_SET:
             data_files_path = WeatherLookup.TRAINING_DATA_WEATHER_FILES_PATH
             data_files_list = WeatherLookup.TRAINING_DATA_WEATHER_FILES
         else:
@@ -93,13 +88,13 @@ class WeatherLookup(object):
             # Loop through the records and load the dictionary lookup
             for record in text_file_contents:
 
-                record_tokens = record.split(WeatherLookup.TAB_CHARACTER)
+                record_tokens = record.split(FileIo.TAB_CHARACTER)
                 unsorted_weather_data[record_tokens[0]] \
                     = WeatherSnapshot(record_tokens[1], record_tokens[2], record_tokens[3].strip())
 
         # Sort the weather data so that searching on timestamp is possible
         self.weather_data = OrderedDict(sorted(unsorted_weather_data.items(),
-                                               key = lambda x: time.mktime(time.strptime(x[0], FileIo.TIMESTAMP_FORMAT))))
+                                            key = lambda x: time.mktime(time.strptime(x[0], FileIo.TIMESTAMP_FORMAT))))
 
     """
     Return weather snapshot closest to the timestamp parameter

@@ -1,4 +1,7 @@
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+TAB_CHARACTER = "\t"
+TRAINING_DATA_SET = "train"
+TEST_DATA_SET = "test"
 
 """Return text file contents as a list"""
 
