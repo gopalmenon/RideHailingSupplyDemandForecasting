@@ -71,18 +71,20 @@ class TrafficLookup(object):
                 traffic_record.\
                     append(int(record_tokens[4].split(TrafficLookup.TRAFFIC_LEVEL_AND_ROAD_SECTION_SEPARATOR)[1]))
                 traffic_record.\
-                    append(record_tokens[5].strip())
+                    append(time.mktime(time.strptime(record_tokens[5].strip(), FileIo.TIMESTAMP_FORMAT)))
 
                 self.traffic_data.append(traffic_record)
 
         # Sort the traffic data so that searching on district hash and timestamp is possible
-        self.traffic_data.sort(key = lambda x: (x[0], time.mktime(time.strptime(x[5], FileIo.TIMESTAMP_FORMAT))))
+        self.traffic_data.sort(key = lambda x: (x[0], x[5]))
         self.traffic_data_keys = [[record[0], record[5]] for record in self.traffic_data]
 
     """
     Return the traffic for the district at the time closest to the timestamp parameter
     """
-    def get_road_section_numbers_for_traffic_congestion_levels(self, district_hash, order_timestamp):
+    def get_road_section_numbers_for_traffic_congestion_levels(self, district_hash, order_time):
+
+        order_timestamp = time.mktime(time.strptime(order_time, FileIo.TIMESTAMP_FORMAT))
 
         # Find the traffic records before and after the input parameters
         traffic_record_before_index = bisect.bisect_left(self.traffic_data_keys, [district_hash, order_timestamp])
@@ -93,16 +95,15 @@ class TrafficLookup(object):
             traffic_record_before_index = len(self.traffic_data_keys) - 1
         if traffic_record_after_index >= len(self.traffic_data_keys):
             traffic_record_after_index = len(self.traffic_data_keys) - 1
+        if traffic_record_before_index == traffic_record_after_index and traffic_record_after_index != 0:
+            traffic_record_before_index -= 1
 
         # Check if before and after records are for same district hash and use the one with the closest timestamp
-        date_time_input = datetime.strptime(order_timestamp, FileIo.TIMESTAMP_FORMAT)
         if self.traffic_data[traffic_record_before_index][0] == district_hash:
             if self.traffic_data[traffic_record_after_index][0] == district_hash:
-                date_time_before = datetime.strptime(self.traffic_data_keys[traffic_record_before_index][1],
-                                                    FileIo.TIMESTAMP_FORMAT)
-                date_time_after = datetime.strptime(self.traffic_data_keys[traffic_record_after_index][1],
-                                                    FileIo.TIMESTAMP_FORMAT)
-                if abs(date_time_input - date_time_before) > abs(date_time_after - date_time_input):
+                date_time_before = self.traffic_data_keys[traffic_record_before_index][1]
+                date_time_after = self.traffic_data_keys[traffic_record_after_index][1]
+                if abs(order_timestamp - date_time_before) > abs(date_time_after - order_timestamp):
                     return self.__get_traffic_conditions(traffic_record_after_index)
                 else:
                     return self.__get_traffic_conditions(traffic_record_before_index)
@@ -141,10 +142,16 @@ class TestTrafficLookup(unittest.TestCase):
         roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("cb6041cc08444746caf6039d8b9e43cb", "2016-01-26 07:10:29")
         self.assertEquals(roads_at_congestion_levels, [138, 27, 2, 7])
 
+    def test_middle_of_range(self):
+        traffic_lookup = TrafficLookup("test")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("4725c39a5e5f4c188d382da3910b3f3f", "2016-01-26 12:00:00")
+        self.assertEquals(roads_at_congestion_levels, [2707, 844, 383, 270])
+
     def test_after_range(self):
         traffic_lookup = TrafficLookup("test")
         roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("44c097b7bd219d104050abbafe51bd49", "2016-01-31 23:55:26")
-        self.assertIsNone(roads_at_congestion_levels)
+        self.assertEquals(roads_at_congestion_levels, [257, 15, 1, 4])
+
 """
 Self test
 """
