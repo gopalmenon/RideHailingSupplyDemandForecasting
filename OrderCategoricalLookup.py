@@ -1,6 +1,4 @@
-import time
 import unittest
-from datetime import datetime
 import FileIo as FileIo
 
 
