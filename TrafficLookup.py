@@ -1,5 +1,4 @@
 import bisect
-from datetime import datetime
 import FileIo
 import time
 import unittest
