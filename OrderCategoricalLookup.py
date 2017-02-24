@@ -9,6 +9,8 @@ import unittest
 # This class stores all possible values for order fields and can return a categorical list for passenger id, driver id,#
 # district and order time.                                                                                             #
 #                                                                                                                      #
+# W A R N I N G : I N S T A N T I A T E  C L A S S  O N L Y  O N C E                                                   #
+#                                                                                                                      #
 ########################################################################################################################
 
 
@@ -151,6 +153,15 @@ class TestOrderCategoricalLookup(unittest.TestCase):
         expected_timestamp_row[4] = 1 # Its a Friday. Zero offset corresponds to Monday.
         expected_timestamp_row[7] = 1 # Its a Holiday
         expected_timestamp_row[OrderCategoricalLookup.TIMESLOT_OFFSET + 5 - 1] = 1 # Its after the fortieth minute
+        self.assertEquals(timestamp_row, expected_timestamp_row)
+
+    def test_january_11_first_minute(self):
+        order_categorical_lookup = OrderCategoricalLookup()
+        timestamp_row = order_categorical_lookup.get_timestamp_row('2016-01-11 00:00:59')
+        expected_timestamp_row = [0] * OrderCategoricalLookup.TIMESTAMP_ROW_LENGTH
+        expected_timestamp_row[0] = 1 # Its a Monday.
+        expected_timestamp_row[7] = 0 # Its not a Holiday
+        expected_timestamp_row[OrderCategoricalLookup.TIMESLOT_OFFSET + 1 - 1] = 1 # Its the first minute
         self.assertEquals(timestamp_row, expected_timestamp_row)
 
     def test_last_day_of_january_last_minute(self):
