@@ -30,8 +30,11 @@ class OrderCategoricalLookup(object):
 
     CHINESE_JANUARY_PUBLIC_HOLIDAYS =[datetime.strptime("2016-01-01", '%Y-%m-%d')]
 
-    TIMESTAMP_ROW_LENGTH = 7 + 1 + 144
-    TIMESLOT_OFFSET = 7 + 1
+    DAYS_IN_WEEK = 7
+    HOLIDAY_SLOTS = 1
+    TEN_MINUTE_SLOTS_IN_A_DAY = 144
+    TIMESTAMP_ROW_LENGTH = DAYS_IN_WEEK + HOLIDAY_SLOTS + TEN_MINUTE_SLOTS_IN_A_DAY
+    TIMESLOT_OFFSET = DAYS_IN_WEEK + HOLIDAY_SLOTS
 
     """
     Constructor
@@ -119,15 +122,15 @@ class OrderCategoricalLookup(object):
         order_datetime = datetime.strptime(order_timestamp, FileIo.TIMESTAMP_FORMAT)
         timestamp_row[order_datetime.weekday()] = 1
 
-        # Check is order date is for a holiday
+        # Check if order date is for a holiday
         if order_datetime.replace(hour=0, minute=0, second=0, microsecond=0) in \
                 OrderCategoricalLookup.CHINESE_JANUARY_PUBLIC_HOLIDAYS:
             timestamp_row[7] = 1
 
         # Each 24 hour day is divided up into 10 minute timeslots. Find timeslot that the order timestamp lies in.
-        minutes_since_order_date_midnight = \
+        seconds_since_order_date_midnight = \
             (order_datetime - order_datetime.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-        ten_minute_steps_since_order_date_midnight = int(math.ceil(minutes_since_order_date_midnight / (60 * 10)))
+        ten_minute_steps_since_order_date_midnight = int(math.ceil(seconds_since_order_date_midnight / (60 * 10)))
         timestamp_row[OrderCategoricalLookup.TIMESLOT_OFFSET + ten_minute_steps_since_order_date_midnight - 1] = 1
 
         return timestamp_row
