@@ -86,11 +86,8 @@ class WeatherLookup(object):
         # Fill lookup dictionary from data files
         for file_name in data_files_list:
 
-            # Read the file
-            text_file_contents = FileIo.get_text_file_contents(data_files_path + file_name)
-
             # Loop through the records and load the dictionary lookup
-            for record in text_file_contents:
+            for record in FileIo.get_text_file_contents(data_files_path + file_name):
 
                 record_tokens = record.split(FileIo.TAB_CHARACTER)
                 unsorted_weather_data[record_tokens[0]] \
@@ -122,11 +119,8 @@ class WeatherLookup(object):
 
             for file_name in data_files_list:
 
-                # Read the file
-                text_file_contents = FileIo.get_text_file_contents(data_files_path + file_name)
-
                 # Loop through the records and load the dictionary lookup
-                for record in text_file_contents:
+                for record in FileIo.get_text_file_contents(data_files_path + file_name):
                     record_tokens = record.split(FileIo.TAB_CHARACTER)
                     weather_conditions_set.add(int(record_tokens[1]))
 

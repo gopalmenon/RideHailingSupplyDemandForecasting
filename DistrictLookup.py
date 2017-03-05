@@ -30,10 +30,7 @@ class DistrictLookup(object):
             district_file_path = DistrictLookup.TESTING_DATA_DISTRICT_FILE_PATH
 
         # Fill lookup dictionary from the district file
-        text_file_contents = FileIo.get_text_file_contents(district_file_path)
-
-        # Loop through the records and load the dictionary lookup
-        for record in text_file_contents:
+        for record in FileIo.get_text_file_contents(district_file_path):
 
             record_tokens = record.split(FileIo.TAB_CHARACTER)
             self.district_data[record_tokens[0]] = record_tokens[1].strip()

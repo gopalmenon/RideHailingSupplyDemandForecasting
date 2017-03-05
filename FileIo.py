@@ -3,11 +3,10 @@ TAB_CHARACTER = "\t"
 TRAINING_DATA_SET = "train"
 TEST_DATA_SET = "test"
 
-"""Return text file contents as a list"""
+"""Return text file contents as a generator"""
 
 
 def get_text_file_contents(file_name):
-    text_file = open(file_name, "r")
-    text_file_contents = text_file.readlines()
-    text_file.close()
-    return text_file_contents
+    with open(file_name) as file_handle:
+        for file_line in file_handle:
+            yield file_line

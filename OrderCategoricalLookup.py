@@ -64,11 +64,8 @@ class OrderCategoricalLookup(object):
 
             for file_name in data_files_list:
 
-                # Read the file
-                text_file_contents = FileIo.get_text_file_contents(data_files_path + file_name)
-
                 # Loop through the records and load the dictionary lookup
-                for record in text_file_contents:
+                for record in FileIo.get_text_file_contents(data_files_path + file_name):
                     record_tokens = record.split(FileIo.TAB_CHARACTER)
                     unique_driver_ids.add(record_tokens[1])
                     unique_passenger_ids.add(record_tokens[2])
