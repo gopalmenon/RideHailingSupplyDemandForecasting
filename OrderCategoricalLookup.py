@@ -109,9 +109,40 @@ class OrderCategoricalLookup(object):
         return district_hash_row
 
     """
+    Return a date given a timestamp
+    """
+    @staticmethod
+    def get_date_from_order_timestamp(order_timestamp):
+
+        return datetime.strptime(order_timestamp, FileIo.TIMESTAMP_FORMAT).date()
+
+    """
+    Return a time slot number given a datetime
+    """
+    @staticmethod
+    def get_time_slot_number_from_order_datetime(order_datetime):
+
+        # Each 24 hour day is divided up into 10 minute time slots. Find time slot that the order timestamp lies in.
+        seconds_since_order_date_midnight = \
+            (order_datetime - order_datetime.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+        ten_minute_steps_since_order_date_midnight = int(math.ceil(seconds_since_order_date_midnight / (60 * 10)))
+        return ten_minute_steps_since_order_date_midnight
+
+
+    """
+    Return a time slot number given a timestamp
+    """
+    @staticmethod
+    def get_time_slot_number_from_order_timestamp(order_timestamp):
+
+        order_datetime = datetime.strptime(order_timestamp, FileIo.TIMESTAMP_FORMAT)
+        return OrderCategoricalLookup.get_time_slot_number_from_order_datetime(order_datetime)
+
+    """
     Return a list corresponding to a timestamp
     """
-    def get_timestamp_row(self, order_timestamp):
+    @staticmethod
+    def get_timestamp_row(order_timestamp):
 
         # Create a timestamp row with the first 7 slots for day of the week, the 8th one for holiday yes/no, followed
         # by 144 slots for the 144 parts that a day is divided into.
@@ -126,11 +157,8 @@ class OrderCategoricalLookup(object):
                 OrderCategoricalLookup.CHINESE_JANUARY_PUBLIC_HOLIDAYS:
             timestamp_row[7] = 1
 
-        # Each 24 hour day is divided up into 10 minute timeslots. Find timeslot that the order timestamp lies in.
-        seconds_since_order_date_midnight = \
-            (order_datetime - order_datetime.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
-        ten_minute_steps_since_order_date_midnight = int(math.ceil(seconds_since_order_date_midnight / (60 * 10)))
-        timestamp_row[OrderCategoricalLookup.TIMESLOT_OFFSET + ten_minute_steps_since_order_date_midnight - 1] = 1
+        timestamp_row[OrderCategoricalLookup.TIMESLOT_OFFSET +
+                      OrderCategoricalLookup.get_time_slot_number_from_order_datetime(order_datetime) - 1] = 1
 
         return timestamp_row
 
@@ -144,8 +172,7 @@ class OrderCategoricalLookup(object):
 class TestOrderCategoricalLookup(unittest.TestCase):
 
     def test_fifth_timeslot_new_year_day(self):
-        order_categorical_lookup = OrderCategoricalLookup()
-        timestamp_row = order_categorical_lookup.get_timestamp_row('2016-01-01 00:44:00')
+        timestamp_row = OrderCategoricalLookup.get_timestamp_row('2016-01-01 00:44:00')
         expected_timestamp_row = [0] * OrderCategoricalLookup.TIMESTAMP_ROW_LENGTH
         expected_timestamp_row[4] = 1 # Its a Friday. Zero offset corresponds to Monday.
         expected_timestamp_row[7] = 1 # Its a Holiday
@@ -153,8 +180,7 @@ class TestOrderCategoricalLookup(unittest.TestCase):
         self.assertEquals(timestamp_row, expected_timestamp_row)
 
     def test_january_11_first_minute(self):
-        order_categorical_lookup = OrderCategoricalLookup()
-        timestamp_row = order_categorical_lookup.get_timestamp_row('2016-01-11 00:00:59')
+        timestamp_row = OrderCategoricalLookup.get_timestamp_row('2016-01-11 00:00:59')
         expected_timestamp_row = [0] * OrderCategoricalLookup.TIMESTAMP_ROW_LENGTH
         expected_timestamp_row[0] = 1 # Its a Monday.
         expected_timestamp_row[7] = 0 # Its not a Holiday
@@ -162,13 +188,16 @@ class TestOrderCategoricalLookup(unittest.TestCase):
         self.assertEquals(timestamp_row, expected_timestamp_row)
 
     def test_last_day_of_january_last_minute(self):
-        order_categorical_lookup = OrderCategoricalLookup()
-        timestamp_row = order_categorical_lookup.get_timestamp_row('2016-01-31 23:59:59')
+        timestamp_row = OrderCategoricalLookup.get_timestamp_row('2016-01-31 23:59:59')
         expected_timestamp_row = [0] * OrderCategoricalLookup.TIMESTAMP_ROW_LENGTH
         expected_timestamp_row[6] = 1 # Its a Sunday
         expected_timestamp_row[7] = 0 # Its not a Holiday
         expected_timestamp_row[OrderCategoricalLookup.TIMESTAMP_ROW_LENGTH - 1] = 1 # Its the last minute
         self.assertEquals(timestamp_row, expected_timestamp_row)
+
+    def test_date_from_timestamp(self):
+        order_date = OrderCategoricalLookup.get_date_from_order_timestamp('2016-01-31 23:59:59')
+        self.assertEquals(order_date, datetime.strptime('2016-01-31', '%Y-%m-%d').date())
 
 """
 Self test
