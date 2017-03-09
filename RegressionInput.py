@@ -1,4 +1,6 @@
+from statistics import median
 import FileIo
+import logging
 import OrderCategoricalLookup
 import OrderKeyValue
 import unittest
@@ -27,7 +29,7 @@ class RegressionInput(object):
         self.input_to_regression_y_order_median_price = list()
 
         self.__summarize_order_data()
-        self.order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup(self.data_set);
+        self.order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup();
         self.__generate_input_to_regression()
 
     """
@@ -44,6 +46,8 @@ class RegressionInput(object):
             data_files_list = OrderCategoricalLookup.OrderCategoricalLookup.TESTING_DATA_ORDER_FILES
 
         for file_name in data_files_list:
+
+            logging.info("RegressionInput: Going through file " + file_name + " in " + self.data_set + " data")
 
             # Loop through the records and load the dictionary lookup
             for record in FileIo.get_text_file_contents(data_files_path + file_name):
@@ -71,15 +75,39 @@ class RegressionInput(object):
     """
     def __generate_input_to_regression(self):
 
+        logging.info("RegressionInput: Building data for regression")
+
         # Loop through summarized data and generate inputs to the regression process
         for key, value in self.order_data.items():
 
+            # Create a row for independent variables that will be the input for the prediction
             regression_key_values = list()
-            regression_key_values.append(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
-            regression_key_values.append(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
-            # Add categorical list for timestamp
+            regression_key_values\
+                .append(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
+            regression_key_values\
+                .append(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
 
-            # Create two lists for median price and number of orders
+            # Add categorical list for timestamp
+            regression_key_values.append(OrderCategoricalLookup.OrderCategoricalLookup
+                .get_timestamp_row_from_date_and_time_slot(key.order_date, key.order_time_slot))
+
+            # Store the row
+            self.input_to_regression_x_keys.append(regression_key_values)
+
+            # Create two lists for median price and number of orders that will be the dependent variables
+            self.input_to_regression_y_order_median_price.append(median(value.order_price))
+            self.input_to_regression_y_number_of_orders.append(value.number_of_orders)
+
+        self.order_data = None
+
+    """
+    Return inputs for regression
+    """
+    def get_regression_inputs(self):
+
+        return self.input_to_regression_y_order_median_price, \
+               self.input_to_regression_y_order_median_price, \
+               self.input_to_regression_y_number_of_orders
 
 ########################################################################################################################
 #                                                                                                                      #
@@ -91,5 +119,8 @@ class RegressionInput(object):
 class TestRegressionInput(unittest.TestCase):
 
     def test_order_data_summarization(self):
+        logging.getLogger().setLevel(logging.INFO)
         regression_input = RegressionInput("test")
-        self.assertEquals(1, 1)
+        X, Y1, Y2 = regression_input.get_regression_inputs()
+        print(str(len(X)) + " row generated for orders.")
+        self.assertEquals(len(X), len(Y1), len(Y2))

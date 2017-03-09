@@ -7,7 +7,7 @@ import OrderCategoricalLookup as OCL
 ########################################################################################################################
 
 
-class OrderKey:
+class OrderKey(object):
 
     """
     Constructor
@@ -22,7 +22,7 @@ class OrderKey:
     Return hash for order keys
     """
     def __hash__(self):
-        return hash(self.order_start_district, self.order_destination_district, self.order_date, self.order_time_slot)
+        return hash((self.order_start_district, self.order_destination_district, self.order_date, self.order_time_slot))
 
     def __eq__(self, other):
         return (self.order_start_district, self.order_destination_district, self.order_date, self.order_time_slot) \
@@ -30,3 +30,27 @@ class OrderKey:
 
     def __ne__(self, other):
         return not(self == other)
+
+
+########################################################################################################################
+#                                                                                                                      #
+# Order Value - Number of orders, array of order prices                                                                #
+#                                                                                                                      #
+########################################################################################################################
+
+class OrderValue(object):
+
+    """
+    Constructor
+    """
+    def __init__(self, order_price):
+        self.number_of_orders = 1
+        self.order_price = [float(order_price)]
+
+    """
+    Append a price to the order summary. This will be appended to an array so that it can be used to compute a median
+    price. Also increment the number of orders.
+    """
+    def append_order_price(self, order_price):
+        self.number_of_orders += 1
+        self.order_price.append(float(order_price))
