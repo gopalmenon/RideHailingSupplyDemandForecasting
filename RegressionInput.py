@@ -1,6 +1,7 @@
 from statistics import median
 import FileIo
 import logging
+import numpy
 import OrderCategoricalLookup
 import OrderKeyValue
 import unittest
@@ -83,16 +84,16 @@ class RegressionInput(object):
             # Create a row for independent variables that will be the input for the prediction
             regression_key_values = list()
             regression_key_values\
-                .append(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
+                .extend(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
             regression_key_values\
-                .append(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
+                .extend(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
 
             # Add categorical list for timestamp
-            regression_key_values.append(OrderCategoricalLookup.OrderCategoricalLookup
+            regression_key_values.extend(OrderCategoricalLookup.OrderCategoricalLookup
                 .get_timestamp_row_from_date_and_time_slot(key.order_date, key.order_time_slot))
 
             # Store the row
-            self.input_to_regression_x_keys.append(regression_key_values)
+            self.input_to_regression_x_keys.append(numpy.asarray(regression_key_values, dtype=numpy.float64))
 
             # Create two lists for median price and number of orders that will be the dependent variables
             self.input_to_regression_y_order_median_price.append(median(value.order_price))
@@ -105,9 +106,9 @@ class RegressionInput(object):
     """
     def get_regression_inputs(self):
 
-        return self.input_to_regression_x_keys, \
-               self.input_to_regression_y_order_median_price, \
-               self.input_to_regression_y_number_of_orders
+        return numpy.asarray(self.input_to_regression_x_keys), \
+               numpy.asarray(self.input_to_regression_y_order_median_price, dtype=numpy.float64), \
+               numpy.asarray(self.input_to_regression_y_number_of_orders, dtype=numpy.float64)
 
 ########################################################################################################################
 #                                                                                                                      #
@@ -121,6 +122,7 @@ class TestRegressionInput(unittest.TestCase):
     def test_order_data_summarization(self):
         logging.getLogger().setLevel(logging.INFO)
         regression_input = RegressionInput("test")
-        order_start_end_districts_and_time, order_median_price, number_of_orders = regression_input.get_regression_inputs()
+        order_start_end_districts_and_time, order_median_price, number_of_orders \
+            = regression_input.get_regression_inputs()
         logging.info(str(len(order_start_end_districts_and_time)) + " row generated for orders.")
         self.assertEquals(len(order_start_end_districts_and_time), len(order_median_price), len(number_of_orders))
