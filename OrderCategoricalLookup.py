@@ -66,7 +66,8 @@ class OrderCategoricalLookup(object):
 
             for file_name in data_files_list:
 
-                logging.info("OrderCategoricalLookup: Going through file " + file_name + " in " + data_set + " data")
+                logging.info("OrderCategoricalLookup: Going through file " + file_name + " in " + data_set
+                             + " data for finding all districts")
 
                 # Loop through the records and load the dictionary lookup
                 for record in FileIo.get_text_file_contents(data_files_path + file_name):
@@ -171,7 +172,7 @@ class OrderCategoricalLookup(object):
 
         order_datetime = datetime.strptime(order_timestamp, FileIo.TIMESTAMP_FORMAT)
         return OrderCategoricalLookup.get_timestamp_row_from_date_and_time_slot(order_datetime.date(),
-               OrderCategoricalLookup.get_time_slot_number_from_order_datetime(order_datetime))
+                        OrderCategoricalLookup.get_time_slot_number_from_order_datetime(order_datetime))
 
 ########################################################################################################################
 #                                                                                                                      #

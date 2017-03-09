@@ -21,7 +21,7 @@ class RegressionInput(object):
     """
     Constructor
     """
-    def __init__(self, data_set):
+    def __init__(self, data_set, order_categorical_lookup):
 
         self.data_set = data_set
         self.order_data = dict()
@@ -30,7 +30,7 @@ class RegressionInput(object):
         self.input_to_regression_y_order_median_price = list()
 
         self.__summarize_order_data()
-        self.order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup();
+        self.order_categorical_lookup = order_categorical_lookup
         self.__generate_input_to_regression()
 
     """
@@ -48,7 +48,7 @@ class RegressionInput(object):
 
         for file_name in data_files_list:
 
-            logging.info("RegressionInput: Going through file " + file_name + " in " + self.data_set + " data")
+            logging.info("RegressionInput: Summarizing orders in file " + file_name + " in " + self.data_set + " data")
 
             # Loop through the records and load the dictionary lookup
             for record in FileIo.get_text_file_contents(data_files_path + file_name):
@@ -106,6 +106,8 @@ class RegressionInput(object):
     """
     def get_regression_inputs(self):
 
+        logging.info("RegressionInput: Returning regression data")
+
         return numpy.asarray(self.input_to_regression_x_keys), \
                numpy.asarray(self.input_to_regression_y_order_median_price, dtype=numpy.float64), \
                numpy.asarray(self.input_to_regression_y_number_of_orders, dtype=numpy.float64)
@@ -121,7 +123,7 @@ class TestRegressionInput(unittest.TestCase):
 
     def test_order_data_summarization(self):
         logging.getLogger().setLevel(logging.INFO)
-        regression_input = RegressionInput("test")
+        regression_input = RegressionInput("test", OrderCategoricalLookup.OrderCategoricalLookup())
         order_start_end_districts_and_time, order_median_price, number_of_orders \
             = regression_input.get_regression_inputs()
         logging.info(str(len(order_start_end_districts_and_time)) + " row generated for orders.")
