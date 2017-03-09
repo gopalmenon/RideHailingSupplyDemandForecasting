@@ -105,7 +105,7 @@ class RegressionInput(object):
     """
     def get_regression_inputs(self):
 
-        return self.input_to_regression_y_order_median_price, \
+        return self.input_to_regression_x_keys, \
                self.input_to_regression_y_order_median_price, \
                self.input_to_regression_y_number_of_orders
 
@@ -121,6 +121,6 @@ class TestRegressionInput(unittest.TestCase):
     def test_order_data_summarization(self):
         logging.getLogger().setLevel(logging.INFO)
         regression_input = RegressionInput("test")
-        X, Y1, Y2 = regression_input.get_regression_inputs()
-        print(str(len(X)) + " row generated for orders.")
-        self.assertEquals(len(X), len(Y1), len(Y2))
+        order_start_end_districts_and_time, order_median_price, number_of_orders = regression_input.get_regression_inputs()
+        logging.info(str(len(order_start_end_districts_and_time)) + " row generated for orders.")
+        self.assertEquals(len(order_start_end_districts_and_time), len(order_median_price), len(number_of_orders))
