@@ -15,13 +15,15 @@ order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup()
 training_regression_input = RegressionInput.RegressionInput(FileIo.TRAINING_DATA_SET, order_categorical_lookup)
 
 # Generate regression model based on training data
-training_order_start_end_districts_and_time, training_order_median_price, training_number_of_orders = training_regression_input.get_regression_inputs()
-reg = linear_model.LinearRegression()
+training_order_start_end_districts_and_time, training_order_median_price, training_number_of_orders \
+    = training_regression_input.get_regression_inputs()
+reg = linear_model.SGDClassifier()
 reg.fit (training_order_start_end_districts_and_time, training_number_of_orders)
 
 # Get test data
 testing_regression_input = RegressionInput.RegressionInput(FileIo.TEST_DATA_SET, order_categorical_lookup)
-testing_order_start_end_districts_and_time, testing_order_median_price, testing_number_of_orders = testing_regression_input.get_regression_inputs()
+testing_order_start_end_districts_and_time, testing_order_median_price, testing_number_of_orders \
+    = testing_regression_input.get_regression_inputs()
 predicted_number_of_orders = reg.predict(testing_order_start_end_districts_and_time)
 
 # Use mean squared error till accuracy metric is available
