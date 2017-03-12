@@ -44,12 +44,15 @@ class RunRegressions(object):
         else:
 
             logging.info("RunRegressions: Loading training data")
+
             self.training_order_start_end_districts_and_time, \
             self.training_order_median_price, \
             self.training_number_of_orders \
                 = saved_training_data['order_keys'], \
                   saved_training_data['order_value_price'], \
                   saved_training_data['order_value_number']
+
+        logging.info("RunRegressions: Loaded " + str(len(self.training_number_of_orders)) + " training data rows")
 
         # Check and see if testing data has already been saved
         try:
@@ -88,21 +91,45 @@ class RunRegressions(object):
                   saved_testing_data['order_value_price'], \
                   saved_testing_data['order_value_number']
 
+        logging.info("RunRegressions: Loaded " + str(len(self.testing_number_of_orders)) + " testing data rows")
+
     """
     Run the regression
     """
     def run_regressions(self):
 
         # Generate regression model based on training data
+        logging.info("RunRegressions: Training SGD Regressor for number of orders with "
+                     + str(len(self.training_number_of_orders)) + " rows")
+
         sgd_regressor = linear_model.SGDRegressor()
         sgd_regressor.fit (self.training_order_start_end_districts_and_time, self.training_number_of_orders)
 
         # Predict the number of orders
+        logging.info("RunRegressions: Predicting number of orders using SGD Regressor with "
+                     + str(len(self.testing_number_of_orders)) + " rows")
         predicted_number_of_orders = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
 
         # Use mean squared error till accuracy metric is available
-        print("Mean squared error: " +
+        print("Mean squared error in number of orders: " +
               str(numpy.mean((predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
+
+        # Generate regression model based on training data
+        logging.info("RunRegressions: Training SGD Regressor for order price with "
+                     + str(len(self.training_number_of_orders)) + " rows")
+
+        sgd_regressor = linear_model.SGDRegressor()
+        sgd_regressor.fit(self.training_order_start_end_districts_and_time, self.training_order_median_price)
+
+        # Predict the order price
+        logging.info("RunRegressions: Predicting order price using SGD Regressor with "
+                     + str(len(self.testing_number_of_orders)) + " rows")
+        predicted_order_price = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
+
+        # Use mean squared error till accuracy metric is available
+        print("Mean squared error in order price: " +
+              str(numpy.mean((predicted_order_price - self.testing_order_median_price) ** 2)))
+
 
 if __name__ == "__main__":
 
