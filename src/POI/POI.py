@@ -67,7 +67,7 @@ class POICatagoryAssignment:
             idx = self.poiCatagories.index(poiCategory)
             #need to find out how to replace a value
             del self.districtList[idx]
-            self.districtList.insert(idx, entry.getNumberFacilities())
+            self.districtList.insert(idx, int(entry.getNumberFacilities()))
         return self.districtHash, self.districtList
         
             
@@ -96,7 +96,7 @@ class ReadPOI:
             for row in poiFile:
                 districtList = []
                 for z in range(totalCatagories):
-                    districtList.append(0)
+                    districtList.append(int(0))
                 rowSplit = row.split('\t',1)
                 x,v = POICatagoryAssignment(poiListCategories, rowSplit[0], rowSplit[1], districtList).createPOIDict()
                 poiDict[x] = v
