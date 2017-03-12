@@ -3,9 +3,9 @@ import logging
 import numpy
 import OrderCategoricalLookup
 import OrderKeyValue
+import src.POI.POI as POI
 import TrafficLookup
 import unittest
-import src.POI.POI as POI
 import WeatherLookup
 
 ########################################################################################################################
@@ -34,20 +34,20 @@ class RegressionInput(object):
         self.input_to_regression_y_number_of_orders = list()
         self.input_to_regression_y_order_median_price = list()
 
-        self.__summarize_order_data()
-        self.order_categorical_lookup = order_categorical_lookup
-        self.__generate_input_to_regression()
-
-        self.traffic_lookup = TrafficLookup(data_set)
-
         self.poi_file_path = None
         if self.data_set == FileIo.TRAINING_DATA_SET:
             self.poi_file_path = RegressionInput.TRAINING_DATA_POI_FILE_PATH
         else:
             self.poi_file_path = RegressionInput.TESTING_DATA_POI_FILE_PATH
-        self.poi_dictionary = POI.ReadPOI.readFile()
+        self.poi_dictionary = POI.ReadPOI(self.poi_file_path).readFile()
 
         self.weather_lookup = WeatherLookup.WeatherLookup(data_set)
+
+        self.traffic_lookup = TrafficLookup.TrafficLookup(data_set)
+
+        self.__summarize_order_data()
+        self.order_categorical_lookup = order_categorical_lookup
+        self.__generate_input_to_regression()
 
     """
     Add up the number of orders for a specific combination of date, time slot, start and end districts.
@@ -106,7 +106,7 @@ class RegressionInput(object):
                 .extend(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
 
             # From District POI (places of interest)
-            regression_key_values.extend(self.__get_poi_list(key.order_start_district))
+            #regression_key_values.extend(self.__get_poi_list(key.order_start_district))
 
             # From District traffic
             regression_key_values\
@@ -119,7 +119,8 @@ class RegressionInput(object):
                 .extend(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
 
             # To District POI (places of interest)
-            regression_key_values.extend(self.__get_poi_list(key.order_destination_district))
+            #poi_list = self.__get_poi_list(key.order_destination_district)
+            #regression_key_values.extend(self.__get_poi_list(key.order_destination_district))
 
             # To District traffic
             regression_key_values \

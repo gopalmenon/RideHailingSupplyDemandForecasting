@@ -1,5 +1,6 @@
 import bisect
 import FileIo
+import logging
 import time
 import unittest
 ########################################################################################################################
@@ -109,7 +110,8 @@ class TrafficLookup(object):
             if self.traffic_data[traffic_record_after_index][0] == district_hash:
                 return self.__get_traffic_conditions(traffic_record_after_index)
             else:
-                raise ValueError('Could not find traffic conditions for district ' + district_hash + " and order time " + order_time)
+                logging.debug("TrafficLookup: Traffic conditions not found for district " + district_hash)
+                return [0, 0, 0, 0]
 
     """
     Return traffic conditions corresponding to the input index
@@ -130,24 +132,35 @@ class TestTrafficLookup(unittest.TestCase):
 
     def test_before_range(self):
         traffic_lookup = TrafficLookup("test")
-        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("58c7a4888306d8ff3a641d1c0feccbe3", "2016-01-22 06:10:29")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels(
+            "58c7a4888306d8ff3a641d1c0feccbe3", "2016-01-22 06:10:29")
         self.assertEquals(roads_at_congestion_levels, [182, 31, 10, 3])
 
     def test_exact_match(self):
         traffic_lookup = TrafficLookup("test")
-        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("cb6041cc08444746caf6039d8b9e43cb", "2016-01-26 07:10:29")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels(
+            "cb6041cc08444746caf6039d8b9e43cb", "2016-01-26 07:10:29")
         self.assertEquals(roads_at_congestion_levels, [138, 27, 2, 7])
 
     def test_middle_of_range(self):
         traffic_lookup = TrafficLookup("test")
-        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("4725c39a5e5f4c188d382da3910b3f3f", "2016-01-26 12:00:00")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels(
+            "4725c39a5e5f4c188d382da3910b3f3f", "2016-01-26 12:00:00")
         self.assertEquals(roads_at_congestion_levels, [2707, 844, 383, 270])
 
     def test_after_range(self):
         traffic_lookup = TrafficLookup("test")
-        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels("44c097b7bd219d104050abbafe51bd49", "2016-01-31 23:55:26")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels(
+            "44c097b7bd219d104050abbafe51bd49", "2016-01-31 23:55:26")
         self.assertEquals(roads_at_congestion_levels, [257, 15, 1, 4])
 
+    def test_no_data_found(self):
+        traffic_lookup = TrafficLookup("test")
+        roads_at_congestion_levels = traffic_lookup.get_road_section_numbers_for_traffic_congestion_levels(
+            "d1e80a5dc54e5dc6568e0ca56b286f5c", "2016-01-31 23:55:26")
+        self.assertEquals(roads_at_congestion_levels, [0, 0, 0, 0])
+
+            #
 """
 Self test
 """
