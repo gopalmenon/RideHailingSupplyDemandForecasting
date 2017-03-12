@@ -109,7 +109,7 @@ class TrafficLookup(object):
             if self.traffic_data[traffic_record_after_index][0] == district_hash:
                 return self.__get_traffic_conditions(traffic_record_after_index)
             else:
-                return None
+                raise ValueError('Could not find traffic conditions for district ' + district_hash + " and order time " + order_time)
 
     """
     Return traffic conditions corresponding to the input index

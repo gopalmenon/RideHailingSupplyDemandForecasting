@@ -1,10 +1,12 @@
-from statistics import median
 import FileIo
 import logging
 import numpy
 import OrderCategoricalLookup
 import OrderKeyValue
+import TrafficLookup
 import unittest
+import src.POI.POI as POI
+import WeatherLookup
 
 ########################################################################################################################
 #                                                                                                                      #
@@ -15,6 +17,9 @@ import unittest
 
 
 class RegressionInput(object):
+
+    TRAINING_DATA_POI_FILE_PATH = "data/season_1/training_data/poi_data/poi_data"
+    TESTING_DATA_POI_FILE_PATH = "data/season_1/test_set_1/poi_data/poi_data"
 
     DRIVER_NOT_FOUND = "NULL"
 
@@ -33,6 +38,17 @@ class RegressionInput(object):
         self.order_categorical_lookup = order_categorical_lookup
         self.__generate_input_to_regression()
 
+        self.traffic_lookup = TrafficLookup(data_set)
+
+        self.poi_file_path = None
+        if self.data_set == FileIo.TRAINING_DATA_SET:
+            self.poi_file_path = RegressionInput.TRAINING_DATA_POI_FILE_PATH
+        else:
+            self.poi_file_path = RegressionInput.TESTING_DATA_POI_FILE_PATH
+        self.poi_dictionary = POI.ReadPOI.readFile()
+
+        self.weather_lookup = WeatherLookup.WeatherLookup(data_set)
+
     """
     Add up the number of orders for a specific combination of date, time slot, start and end districts.
     Also maintain a list of prices that will be used to compute the median price.
@@ -42,6 +58,7 @@ class RegressionInput(object):
         if self.data_set == FileIo.TRAINING_DATA_SET:
             data_files_path = OrderCategoricalLookup.OrderCategoricalLookup.TRAINING_DATA_ORDER_FILES_PATH
             data_files_list = OrderCategoricalLookup.OrderCategoricalLookup.TRAINING_DATA_ORDER_FILES
+
         else:
             data_files_path = OrderCategoricalLookup.OrderCategoricalLookup.TESTING_DATA_ORDER_FILES_PATH
             data_files_list = OrderCategoricalLookup.OrderCategoricalLookup.TESTING_DATA_ORDER_FILES
@@ -81,32 +98,69 @@ class RegressionInput(object):
         # Loop through summarized data and generate inputs to the regression process
         for key, value in self.order_data.items():
 
-            # Create a row for independent variables that will be the input for the prediction
+            # Create a row for independent variables that will be the input for the prediction.
             regression_key_values = list()
+
+            # From district
             regression_key_values\
                 .extend(self.order_categorical_lookup.get_district_hash_row(key.order_start_district))
+
+            # From District POI (places of interest)
+            regression_key_values.extend(self.__get_poi_list(key.order_start_district))
+
+            # From District traffic
+            regression_key_values\
+                .extend(self.traffic_lookup
+                        .get_road_section_numbers_for_traffic_congestion_levels(key.order_start_district,
+                                                                                key.order_timestamp))
+
+            # To district
             regression_key_values\
                 .extend(self.order_categorical_lookup.get_district_hash_row(key.order_destination_district))
+
+            # To District POI (places of interest)
+            regression_key_values.extend(self.__get_poi_list(key.order_destination_district))
+
+            # To District traffic
+            regression_key_values \
+                .extend(self.traffic_lookup
+                        .get_road_section_numbers_for_traffic_congestion_levels(key.order_destination_district,
+                                                                                key.order_timestamp))
 
             # Add categorical list for timestamp
             regression_key_values.extend(OrderCategoricalLookup.OrderCategoricalLookup
                 .get_timestamp_row_from_date_and_time_slot(key.order_date, key.order_time_slot))
 
+            # Add categorical list for weather
+            regression_key_values.extend(self.weather_lookup.get_weather_snapshot(key.order_timestamp))
+
             # Store the row
             self.input_to_regression_x_keys.append(numpy.asarray(regression_key_values, dtype=numpy.float64))
 
             # Create two lists for median price and number of orders that will be the dependent variables
-            self.input_to_regression_y_order_median_price.append(median(value.order_price))
-            self.input_to_regression_y_number_of_orders.append(value.number_of_orders)
+            number_of_orders, order_price = value.get_number_of_orders_and_median_price()
+            self.input_to_regression_y_number_of_orders.append(number_of_orders)
+            self.input_to_regression_y_order_median_price.append(order_price)
 
         self.order_data = None
+
+    """
+    Get POI categorical list given a district hash
+    """
+    def __get_poi_list(self, district_hash):
+
+        if district_hash in self.poi_dictionary:
+            return self.poi_dictionary[district_hash]
+        else:
+            raise ValueError('Could not find POI information for district ' + district_hash)
 
     """
     Return inputs for regression
     """
     def get_regression_inputs(self):
 
-        logging.info("RegressionInput: Returning regression data")
+        logging.info("RegressionInput: Returning regression data with "
+                     + str(len(self.input_to_regression_y_number_of_orders)) + " rows")
 
         return numpy.asarray(self.input_to_regression_x_keys), \
                numpy.asarray(self.input_to_regression_y_order_median_price, dtype=numpy.float64), \

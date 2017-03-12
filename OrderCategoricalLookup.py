@@ -44,12 +44,8 @@ class OrderCategoricalLookup(object):
     def __init__(self):
 
         # Create storage for categorical data
-        self.driver_ids = list()
-        self.passenger_ids = list()
         self.district_hashes = list()
 
-        unique_driver_ids = set()
-        unique_passenger_ids = set()
         unique_district_hashes = set()
 
         # Store all unique occurrences of categorical fields
@@ -72,36 +68,12 @@ class OrderCategoricalLookup(object):
                 # Loop through the records and load the dictionary lookup
                 for record in FileIo.get_text_file_contents(data_files_path + file_name):
                     record_tokens = record.split(FileIo.TAB_CHARACTER)
-                    unique_driver_ids.add(record_tokens[1])
-                    unique_passenger_ids.add(record_tokens[2])
                     unique_district_hashes.add(record_tokens[3])
                     unique_district_hashes.add(record_tokens[4])
 
         # Store unique categorical field values
-        self.driver_ids = list(unique_driver_ids)
-        self.driver_ids.sort()
-        self.passenger_ids = list(unique_passenger_ids)
-        self.passenger_ids.sort()
         self.district_hashes = list(unique_district_hashes)
         self.district_hashes.sort()
-
-    """
-    Return a list corresponding to a driver id
-    """
-    def get_driver_id_row(self, driver_id):
-
-        driver_id_row = [0] * len(self.driver_ids)
-        driver_id_row[self.driver_ids.index(driver_id)] = 1
-        return driver_id_row
-
-    """
-    Return a list corresponding to a passenger id
-    """
-    def get_passenger_id_row(self, passenger_id):
-
-        passenger_id_row = [0] * len(self.passenger_ids)
-        passenger_id_row[self.passenger_ids.index(passenger_id)] = 1
-        return passenger_id_row
 
 
     """
