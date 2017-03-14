@@ -1,4 +1,5 @@
 from sklearn import linear_model
+from sklearn.model_selection import cross_val_score
 import FileIo
 import logging
 import numpy
@@ -11,6 +12,8 @@ class RunRegressions(object):
 
     REGRESSION_TRAINING_INPUT_FILE_NAME = "RegressionTrainingInput.npz"
     REGRESSION_TESTING_INPUT_FILE_NAME = "RegressionTestingInput.npz"
+    MAXIMUM_NUMBER_OF_JOBS = -1
+    NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
 
     def __init__(self):
 
@@ -93,17 +96,99 @@ class RunRegressions(object):
 
         logging.info("RunRegressions: Loaded " + str(len(self.testing_number_of_orders)) + " testing data rows")
 
+
     """
     Run sgd regression
     """
-    def run_sgd_regression(self):
+    def __run_sgd_regression(self):
+
+        losses = ["squared_loss"]
+        penalties = ["none", "l2", "l1", "elasticnet"]
+        initial_learning_rates =[0.1, 0.01, 0.001]
+        learning_rates = ["constant", "optimal", "invscaling"]
+
+        lowest_ride_prediction_error = float('inf')
+        current_ride_prediction_error = 0.0
+
+        best_loss = ""
+        best_penalty = ""
+        best_initial_learning_rate = 0.0
+        best_learning_rate = ""
+
+        # Find the best hyper-parameters
+        for loss_counter in range(len(losses)):
+            for penalty_counter in range(len(penalties)):
+                for initial_learning_rate_counter in range(len(initial_learning_rates)):
+                    for learning_rate_counter in range(len(learning_rates)):
+                        current_ride_prediction_error = \
+                        self.__run_sgd_regression_cross_validation(loss = losses[loss_counter],
+                                                                penalty = penalties[penalty_counter],
+                                                                initial_learning_rate =
+                                                                  initial_learning_rates[initial_learning_rate_counter],
+                                                                learning_rate = learning_rates[learning_rate_counter])
+
+                        # Save values if better than previous best
+                        if current_ride_prediction_error < lowest_ride_prediction_error:
+                            lowest_ride_prediction_error = current_ride_prediction_error
+                            best_loss = losses[loss_counter]
+                            best_penalty = penalties[penalty_counter]
+                            best_initial_learning_rate = initial_learning_rates[initial_learning_rate_counter]
+                            best_learning_rate = learning_rates[learning_rate_counter]
+
+        self.__run_sgd_regression_for_optimal_hyper_parameters(self,
+                                                               loss = best_loss,
+                                                               penalty = best_penalty,
+                                                               initial_learning_rate = best_initial_learning_rate,
+                                                               learning_rate = best_learning_rate)
+
+
+    """
+    Run sgd regression cross validation
+    """
+    def __run_sgd_regression_cross_validation(self, loss, penalty, initial_learning_rate, learning_rate):
+
+        for cross_validation_fold in range(RunRegressions.NUMBER_OF_CROSS_VALIDATION_FOLDS):
+
+            # Generate regression model based on training data
+            logging.info("RunRegressions: " + str(RunRegressions.NUMBER_OF_CROSS_VALIDATION_FOLDS) +
+                         " fold cross validating SGD Regressor with " +
+                         str(len(self.training_number_of_orders)) + " rows, loss " + loss + ", penalty " + penalty +
+                         ", initial learning rate " + str(initial_learning_rate) +
+                         " and learning rate " + str(learning_rate))
+
+            # Create the sgd regressor using the input parameters
+            sgd_regressor = linear_model.SGDRegressor(loss = loss,
+                                                      penalty = penalty,
+                                                      eta0 = initial_learning_rate,
+                                                      learning_rate = learning_rate)
+
+            cross_validation_scores = cross_val_score(estimator = sgd_regressor,
+                                                      X = self.training_order_start_end_districts_and_time,
+                                                      y = self.training_order_median_price,
+                                                      cv = RunRegressions.NUMBER_OF_CROSS_VALIDATION_FOLDS,
+                                                      n_jobs = RunRegressions.MAXIMUM_NUMBER_OF_JOBS)
+
+            return numpy.mean(cross_validation_scores)
+
+
+    """
+    Run sgd regression
+    """
+    def __run_sgd_regression_for_optimal_hyper_parameters(self, loss, penalty, initial_learning_rate, learning_rate):
 
         # Generate regression model based on training data
-        logging.info("RunRegressions: Training SGD Regressor for number of orders with "
-                     + str(len(self.training_number_of_orders)) + " rows")
+        logging.info("RunRegressions: Training SGD Regressor with " +
+                     str(len(self.training_number_of_orders)) + " rows, loss " + loss + ", penalty " + penalty +
+                     ", initial learning rate " + str(initial_learning_rate) + " and learning rate " +
+                     str(learning_rate))
 
-        sgd_regressor = linear_model.SGDRegressor()
-        sgd_regressor.fit (self.training_order_start_end_districts_and_time, self.training_number_of_orders)
+        # Create the sgd regressor using the input parameters
+        sgd_regressor = linear_model.SGDRegressor(loss=loss,
+                                                  penalty=penalty,
+                                                  eta0=initial_learning_rate,
+                                                  learning_rate=learning_rate)
+
+        sgd_regressor.fit(self.training_order_start_end_districts_and_time, self.training_number_of_orders)
 
         # Predict the number of orders
         logging.info("RunRegressions: Predicting number of orders using SGD Regressor with "
@@ -114,28 +199,13 @@ class RunRegressions(object):
         print("Mean squared error in number of orders: " +
               str(numpy.mean((predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
 
-        # Generate regression model based on training data
-        logging.info("RunRegressions: Training SGD Regressor for order price with "
-                     + str(len(self.training_number_of_orders)) + " rows")
-
-        sgd_regressor = linear_model.SGDRegressor()
-        sgd_regressor.fit(self.training_order_start_end_districts_and_time, self.training_order_median_price)
-
-        # Predict the order price
-        logging.info("RunRegressions: Predicting order price using SGD Regressor with "
-                     + str(len(self.testing_number_of_orders)) + " rows")
-        predicted_order_price = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
-
-        # Use mean squared error till accuracy metric is available
-        print("Mean squared error in order price: " +
-              str(numpy.mean((predicted_order_price - self.testing_order_median_price) ** 2)))
 
     """
     Reg all regressions
     """
     def run_regressions(self):
 
-        self.run_sgd_regression()
+        self.__run_sgd_regression()
 
 
 if __name__ == "__main__":
