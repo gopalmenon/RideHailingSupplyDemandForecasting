@@ -94,9 +94,9 @@ class RunRegressions(object):
         logging.info("RunRegressions: Loaded " + str(len(self.testing_number_of_orders)) + " testing data rows")
 
     """
-    Run the regression
+    Run sgd regression
     """
-    def run_regressions(self):
+    def run_sgd_regression(self):
 
         # Generate regression model based on training data
         logging.info("RunRegressions: Training SGD Regressor for number of orders with "
@@ -129,6 +129,13 @@ class RunRegressions(object):
         # Use mean squared error till accuracy metric is available
         print("Mean squared error in order price: " +
               str(numpy.mean((predicted_order_price - self.testing_order_median_price) ** 2)))
+
+    """
+    Reg all regressions
+    """
+    def run_regressions(self):
+
+        self.run_sgd_regression()
 
 
 if __name__ == "__main__":

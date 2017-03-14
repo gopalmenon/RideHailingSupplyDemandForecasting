@@ -109,10 +109,10 @@ class RegressionInput(object):
             #regression_key_values.extend(self.__get_poi_list(key.order_start_district))
 
             # From District traffic
-            regression_key_values\
-                .extend(self.traffic_lookup
-                        .get_road_section_numbers_for_traffic_congestion_levels(key.order_start_district,
-                                                                                key.order_timestamp))
+            #regression_key_values\
+            #    .extend(self.traffic_lookup
+            #            .get_road_section_numbers_for_traffic_congestion_levels(key.order_start_district,
+            #                                                                    key.order_timestamp))
 
             # To district
             regression_key_values\
@@ -123,17 +123,17 @@ class RegressionInput(object):
             #regression_key_values.extend(self.__get_poi_list(key.order_destination_district))
 
             # To District traffic
-            regression_key_values \
-                .extend(self.traffic_lookup
-                        .get_road_section_numbers_for_traffic_congestion_levels(key.order_destination_district,
-                                                                                key.order_timestamp))
+            #regression_key_values \
+            #    .extend(self.traffic_lookup
+            #            .get_road_section_numbers_for_traffic_congestion_levels(key.order_destination_district,
+            #                                                                    key.order_timestamp))
 
             # Add categorical list for timestamp
             regression_key_values.extend(OrderCategoricalLookup.OrderCategoricalLookup
                 .get_timestamp_row_from_date_and_time_slot(key.order_date, key.order_time_slot))
 
             # Add categorical list for weather
-            regression_key_values.extend(self.weather_lookup.get_weather_snapshot(key.order_timestamp))
+            #regression_key_values.extend(self.weather_lookup.get_weather_snapshot(key.order_timestamp))
 
             # Store the row
             self.input_to_regression_x_keys.append(numpy.asarray(regression_key_values, dtype=numpy.float64))
