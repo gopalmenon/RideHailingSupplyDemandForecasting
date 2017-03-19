@@ -70,7 +70,7 @@ class RunRegression(object):
                                                          saved_data['order_value_price'], \
                                                          saved_data['order_value_number']
 
-                    logging.info("RunRegression: Loaded " + str(len(self.training_number_of_orders)) + " " +
+                    logging.info("RunRegression: Loaded " + str(len(self.training_number_of_orders)) +
                                  " train data rows")
                 else:
 
@@ -79,7 +79,7 @@ class RunRegression(object):
                                                         saved_data['order_value_price'], \
                                                         saved_data['order_value_number']
 
-                    logging.info("RunRegression: Loaded " + str(len(self.testing_number_of_orders)) + " " +
+                    logging.info("RunRegression: Loaded " + str(len(self.testing_number_of_orders)) +
                                  " test data rows")
 
     """
