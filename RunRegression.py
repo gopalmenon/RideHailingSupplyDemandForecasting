@@ -24,7 +24,7 @@ class RunRegression(object):
             # Check and see if the data has already been saved
             try:
 
-                logging.info("RunRegression: Trying to load  " + data_set + " data")
+                logging.info("RunRegression: Trying to load " + data_set + " data")
 
                 saved_data = numpy.load(file_name, mmap_mode='r')
 
@@ -131,7 +131,7 @@ class RunRegression(object):
                                                     RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
                                 logging.info("RunRegression: " + str(RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS) +
-                                             " fold cross validation training SGD Regressor for fold  " +
+                                             " fold cross validation training SGD Regressor for fold " +
                                              str(fold_number) + ", starting row " + str(training_start_row) +
                                              ", ending row " + str(training_end_row) + ", loss " + loss + ", penalty "
                                              + penalty + ", initial learning rate " + str(initial_learning_rate) +
@@ -164,23 +164,32 @@ class RunRegression(object):
 
                             mean_ride_prediction_error += current_ride_prediction_error
 
-                        mean_ride_prediction_error /= RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
+                            if RunRegression.__is_mean_prediction_error_too_high(mean_ride_prediction_error,
+                                                                                 lowest_ride_prediction_error):
+                                logging.info("RunRegression: Mean prediction error of " +
+                                             str(mean_ride_prediction_error) + "is too high compared to best so far " +
+                                             str(lowest_ride_prediction_error) + ". Ending current cross validation.")
+                                break
 
-                        logging.info("RunRegressions: Mean prediction error is " + str(mean_ride_prediction_error))
+                        else:
 
-                        # Save values if better than previous best
-                        if mean_ride_prediction_error < lowest_ride_prediction_error:
+                            mean_ride_prediction_error /= RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
-                            logging.info("RunRegression: mean error of " + str(mean_ride_prediction_error) +
-                                         " is the best so far. Saving loss " + loss + ", penalty " + penalty +
-                                         ", initial learning rate " + str(initial_learning_rate) +
-                                         " and learning rate " + learning_rate)
+                            logging.info("RunRegression: Mean prediction error is " + str(mean_ride_prediction_error))
 
-                            lowest_ride_prediction_error = mean_ride_prediction_error
-                            best_loss = loss
-                            best_penalty = penalty
-                            best_initial_learning_rate = initial_learning_rate
-                            best_learning_rate = learning_rate
+                            # Save values if better than previous best
+                            if mean_ride_prediction_error < lowest_ride_prediction_error:
+
+                                logging.info("RunRegression: mean error of " + str(mean_ride_prediction_error) +
+                                             " is the best so far. Saving loss " + loss + ", penalty " + penalty +
+                                             ", initial learning rate " + str(initial_learning_rate) +
+                                             " and learning rate " + learning_rate)
+
+                                lowest_ride_prediction_error = mean_ride_prediction_error
+                                best_loss = loss
+                                best_penalty = penalty
+                                best_initial_learning_rate = initial_learning_rate
+                                best_learning_rate = learning_rate
 
         logging.info("RunRegression: Running regression with best values so far: loss " + best_loss + ", penalty " +
                      best_penalty + ", initial learning rate " + str(best_initial_learning_rate) +
@@ -192,11 +201,20 @@ class RunRegression(object):
                                                   learning_rate=best_learning_rate)
 
         sgd_regressor.fit(X=self.training_order_start_end_districts_and_time,
-                          y=self.training_number_of_orders
-                          )
+                          y=self.training_number_of_orders)
         best_predicted_number_of_orders = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
-        logging.info("RunRegressions: Mean prediction error after cross validation is " +
+
+        logging.info("RunRegression: Mean prediction error after cross validation is " +
                      str(numpy.mean((best_predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
+
+    """
+    Check if mean prediction error is to high to qualify as the best so far
+    """
+    @staticmethod
+    def __is_mean_prediction_error_too_high(cumulative_mean_prediction_error, best_prediction_error_so_far):
+
+        return cumulative_mean_prediction_error / RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS > \
+               best_prediction_error_so_far
 
 if __name__ == "__main__":
 
