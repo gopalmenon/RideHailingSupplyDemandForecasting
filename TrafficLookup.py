@@ -37,6 +37,11 @@ class TrafficLookup(object):
         self.data_set = data_set
         self.traffic_data = list()
         self.traffic_data_keys = None
+        self.districts_with_traffic_info = list()
+
+        # Sets for each of the environments
+        unique_districts_with_traffic_info_1 = set()
+        unique_districts_with_traffic_info_2 = set()
 
         # Initialize files list based on which environment is being worked on
         data_files_path = None
@@ -57,6 +62,9 @@ class TrafficLookup(object):
                 traffic_record = list()
                 record_tokens = record.split(FileIo.TAB_CHARACTER)
 
+                # Add district to the list of districts with traffic info
+                unique_districts_with_traffic_info_1.add(record_tokens[0])
+
                 # Separate out district hash, traffic at the four congestion levels and timestamp
                 traffic_record.append(record_tokens[0])
                 traffic_record.\
@@ -75,6 +83,27 @@ class TrafficLookup(object):
         # Sort the traffic data so that searching on district hash and timestamp is possible
         self.traffic_data.sort(key = lambda x: (x[0], x[5]))
         self.traffic_data_keys = [[record[0], record[5]] for record in self.traffic_data]
+
+        # Loop through the other data set and add districts to the to list of districts with traffic info
+        if self.data_set == FileIo.TRAINING_DATA_SET:
+            data_files_path = TrafficLookup.TESTING_DATA_TRAFFIC_FILES_PATH
+            data_files_list = TrafficLookup.TESTING_DATA_TRAFFIC_FILES
+        else:
+            data_files_path = TrafficLookup.TRAINING_DATA_TRAFFIC_FILES_PATH
+            data_files_list = TrafficLookup.TRAINING_DATA_TRAFFIC_FILES
+
+        for file_name in data_files_list:
+
+            # Loop through the records and add districts to the list of districts with traffic info
+            for record in FileIo.get_text_file_contents(data_files_path + file_name):
+                record_tokens = record.split(FileIo.TAB_CHARACTER)
+                unique_districts_with_traffic_info_2.add(record_tokens[0])
+
+        # Save the districts with traffic info
+        self.districts_with_traffic_info = list(unique_districts_with_traffic_info_1
+                                                .intersection(unique_districts_with_traffic_info_2))
+        unique_districts_with_traffic_info_1 = None
+        unique_districts_with_traffic_info_2 = None
 
     """
     Return the traffic for the district at the time closest to the timestamp parameter
@@ -121,6 +150,13 @@ class TrafficLookup(object):
         return [self.traffic_data[index][1], self.traffic_data[index][2],
                 self.traffic_data[index][3], self.traffic_data[index][4]]
 
+    """
+    Return true if district has traffic info
+    """
+    def district_has_traffic_info(self, district_hash):
+
+        return district_hash in self.districts_with_traffic_info
+
 ########################################################################################################################
 #                                                                                                                      #
 # Unit testing class.                                                                                                  #
@@ -160,7 +196,14 @@ class TestTrafficLookup(unittest.TestCase):
             "d1e80a5dc54e5dc6568e0ca56b286f5c", "2016-01-31 23:55:26")
         self.assertEquals(roads_at_congestion_levels, [0, 0, 0, 0])
 
-            #
+    def test_district_with_traffic_info(self):
+        traffic_lookup = TrafficLookup("test")
+        self.assertTrue(traffic_lookup.district_has_traffic_info("ca064c2682ca48c6a21de012e87c0df5"))
+
+    def test_district_without_traffic_info(self):
+        traffic_lookup = TrafficLookup("test")
+        self.assertFalse(traffic_lookup.district_has_traffic_info("d1e80a5dcabc5dc6568e0def6b286f5c"))
+
 """
 Self test
 """

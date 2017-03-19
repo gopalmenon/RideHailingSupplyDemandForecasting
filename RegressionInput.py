@@ -3,6 +3,7 @@ import logging
 import numpy
 import OrderCategoricalLookup
 import OrderKeyValue
+import PoiDistrictLookup
 import src.POI.POI as POI
 import TrafficLookup
 import unittest
@@ -45,6 +46,8 @@ class RegressionInput(object):
 
         self.traffic_lookup = TrafficLookup.TrafficLookup(data_set)
 
+        self.poi_district_lookup = PoiDistrictLookup.PoiDistrictLookup()
+
         self.__summarize_order_data()
         self.order_categorical_lookup = order_categorical_lookup
         self.__generate_input_to_regression()
@@ -77,15 +80,25 @@ class RegressionInput(object):
                 if order_driver_id == RegressionInput.DRIVER_NOT_FOUND:
                     continue
 
+                # Use the order for regression only if both start and end districts have POI and Traffic information
+                # in both train and test environments
+                if not self.traffic_lookup.district_has_traffic_info(district_hash=record_tokens[3]) or \
+                   not self.traffic_lookup.district_has_traffic_info(district_hash=record_tokens[4]) or \
+                   not self.poi_district_lookup.district_has_poi_info(district_hash=record_tokens[3]) or \
+                   not self.poi_district_lookup.district_has_poi_info(district_hash=record_tokens[4]):
+                    continue
+
                 # Create an order key to check if it already exists in summarized order data
-                order_key = OrderKeyValue.OrderKey(record_tokens[3], record_tokens[4], record_tokens[6].strip())
+                order_key = OrderKeyValue.OrderKey(order_start_district=record_tokens[3],
+                                                   order_destination_district=record_tokens[4],
+                                                   order_timestamp=record_tokens[6].strip())
 
                 if order_key in self.order_data:
                     order_value = self.order_data[order_key]
                     order_value.append_order_price(record_tokens[5])
                     self.order_data[order_key] = order_value
                 else:
-                    self.order_data[order_key] = OrderKeyValue.OrderValue(record_tokens[5])
+                    self.order_data[order_key] = OrderKeyValue.OrderValue(order_price=record_tokens[5])
 
 
     """
