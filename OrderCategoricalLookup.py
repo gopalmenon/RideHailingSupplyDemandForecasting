@@ -41,10 +41,11 @@ class OrderCategoricalLookup(object):
     """
     Constructor
     """
-    def __init__(self):
+    def __init__(self, poi_district_lookup):
 
         # Create storage for categorical data
         self.district_hashes = list()
+        self.poi_district_lookup = poi_district_lookup
 
         unique_district_hashes = set()
 
@@ -68,8 +69,10 @@ class OrderCategoricalLookup(object):
                 # Loop through the records and load the dictionary lookup
                 for record in FileIo.get_text_file_contents(data_files_path + file_name):
                     record_tokens = record.split(FileIo.TAB_CHARACTER)
-                    unique_district_hashes.add(record_tokens[3])
-                    unique_district_hashes.add(record_tokens[4])
+                    if self.poi_district_lookup.district_has_poi_info(record_tokens[3]):
+                        unique_district_hashes.add(record_tokens[3])
+                    if self.poi_district_lookup.district_has_poi_info(record_tokens[4]):
+                        unique_district_hashes.add(record_tokens[4])
 
         # Store unique categorical field values
         self.district_hashes = list(unique_district_hashes)

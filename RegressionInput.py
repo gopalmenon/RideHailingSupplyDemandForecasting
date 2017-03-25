@@ -3,7 +3,6 @@ import logging
 import numpy
 import OrderCategoricalLookup
 import OrderKeyValue
-import PoiDistrictLookup
 import src.POI.POI as POI
 import TrafficLookup
 import unittest
@@ -27,7 +26,7 @@ class RegressionInput(object):
     """
     Constructor
     """
-    def __init__(self, data_set, order_categorical_lookup):
+    def __init__(self, data_set, order_categorical_lookup, poi_district_lookup):
 
         self.data_set = data_set
         self.order_data = dict()
@@ -46,7 +45,7 @@ class RegressionInput(object):
 
         self.traffic_lookup = TrafficLookup.TrafficLookup(data_set)
 
-        self.poi_district_lookup = PoiDistrictLookup.PoiDistrictLookup()
+        self.poi_district_lookup = poi_district_lookup
 
         self.__summarize_order_data()
         self.order_categorical_lookup = order_categorical_lookup

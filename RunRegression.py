@@ -3,6 +3,7 @@ import FileIo
 import logging
 import numpy
 import OrderCategoricalLookup
+import PoiDistrictLookup
 import RegressionInput
 import warnings
 
@@ -16,7 +17,9 @@ class RunRegression(object):
 
     def __init__(self):
 
-        self.order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup()
+        self.poi_district_lookup = PoiDistrictLookup.PoiDistrictLookup()
+        self.order_categorical_lookup = OrderCategoricalLookup\
+            .OrderCategoricalLookup(self.poi_district_lookup)
 
         for file_name, data_set in [(RunRegression.REGRESSION_TRAINING_INPUT_FILE_NAME, FileIo.TRAINING_DATA_SET),
                                     (RunRegression.REGRESSION_TESTING_INPUT_FILE_NAME, FileIo.TEST_DATA_SET)]:
@@ -34,7 +37,9 @@ class RunRegression(object):
                 logging.info("RunRegression: Saved data not found. Generating " + data_set + " data")
 
                 # Generate inputs
-                regression_input = RegressionInput.RegressionInput(data_set, self.order_categorical_lookup)
+                regression_input = RegressionInput.RegressionInput(data_set,
+                                                                   self.order_categorical_lookup,
+                                                                   self.poi_district_lookup)
 
                 if data_set == FileIo.TRAINING_DATA_SET:
 
