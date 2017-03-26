@@ -10,13 +10,13 @@ import PoiDistrictLookup
 import RegressionInput
 import warnings
 
-
 class RunRegression(object):
 
     REGRESSION_TRAINING_INPUT_FILE_NAME = "RegressionTrainingInput.npz"
     REGRESSION_TESTING_INPUT_FILE_NAME = "RegressionTestingInput.npz"
     MAXIMUM_NUMBER_OF_JOBS = -1
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
+    ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
 
     def __init__(self):
 
@@ -258,10 +258,12 @@ class RunRegression(object):
         predicted_rides = list()
 
         # Loop through training data and make predictions
-        for testing_data_point_index, testing_data_point in enumerate(self.testing_order_start_end_districts_and_time):
+        for testing_data_point_counter, testing_data_point in \
+                enumerate(self.testing_order_start_end_districts_and_time
+                          [:RunRegression.ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION]):
 
-            if testing_data_point_index % 10 == 0:
-                logging.info("RunRegression: Running prediction number " + str(testing_data_point_index) +
+            if testing_data_point_counter % 10 == 0:
+                logging.info("RunRegression: Running prediction number " + str(testing_data_point_counter) +
                              " using Gaussian Regression")
 
             # Make a prediction and add it to list of predictions
@@ -271,7 +273,8 @@ class RunRegression(object):
                                            query_point=testing_data_point))
 
         logging.info("RunRegression: Mean prediction error using Gaussian Regression is " +
-                     str(numpy.mean((numpy.asarray(predicted_rides) - self.testing_number_of_orders) ** 2)))
+                     str(numpy.mean((numpy.asarray(predicted_rides) - self.testing_number_of_orders
+                                                    [:RunRegression.ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION]) ** 2)))
 
 if __name__ == "__main__":
 

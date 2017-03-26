@@ -1,5 +1,6 @@
 from math import exp
 import numpy
+import unittest
 
 ########################################################################################################################
 #                                                                                                                      #
@@ -8,6 +9,7 @@ import numpy
 # will contribute to the output.                                                                                       #
 #                                                                                                                      #
 ########################################################################################################################
+
 
 class GaussianKernel():
 
@@ -40,3 +42,27 @@ class GaussianKernel():
 
         # Return the prediction
         return prediction_weighted_value / prediction_weighted_sum
+
+########################################################################################################################
+#                                                                                                                      #
+# Unit testing class.                                                                                                  #
+#                                                                                                                      #
+########################################################################################################################
+
+
+class TestGaussianKernel(unittest.TestCase):
+
+    def test_kernel_output(self):
+        data_points = [[1,2,3],[4,5,6],[7,8,9]]
+        data_values = [100,110,121]
+        query_point = [2,4,7]
+        prediction = GaussianKernel.predict_query_point_value(training_data_points=numpy.asarray(data_points),
+                                                              training_data_values=numpy.asarray(data_values),
+                                                              query_point=query_point)
+        self.assertTrue(abs(prediction - 109.994472251)/prediction < 0.000001)
+
+"""
+Self test
+"""
+if __name__ == "__main__":
+    unittest.main()
