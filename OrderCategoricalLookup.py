@@ -78,6 +78,7 @@ class OrderCategoricalLookup(object):
         self.district_hashes = list(unique_district_hashes)
         self.district_hashes.sort()
 
+        logging.info("OrderCategoricalLookup: Found " + str(len(self.district_hashes)) + " districts")
 
     """
     Return a list corresponding to a district hash

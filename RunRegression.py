@@ -1,6 +1,8 @@
+from numpy import linalg
 from sklearn import linear_model
 import FileIo
 import logging
+import matplotlib.pyplot as plt
 import numpy
 import OrderCategoricalLookup
 import PoiDistrictLookup
@@ -16,10 +18,6 @@ class RunRegression(object):
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
 
     def __init__(self):
-
-        self.poi_district_lookup = PoiDistrictLookup.PoiDistrictLookup()
-        self.order_categorical_lookup = OrderCategoricalLookup\
-            .OrderCategoricalLookup(self.poi_district_lookup)
 
         for file_name, data_set in [(RunRegression.REGRESSION_TRAINING_INPUT_FILE_NAME, FileIo.TRAINING_DATA_SET),
                                     (RunRegression.REGRESSION_TESTING_INPUT_FILE_NAME, FileIo.TEST_DATA_SET)]:
@@ -37,9 +35,11 @@ class RunRegression(object):
                 logging.info("RunRegression: Saved data not found. Generating " + data_set + " data")
 
                 # Generate inputs
+                poi_district_lookup = PoiDistrictLookup.PoiDistrictLookup()
+                order_categorical_lookup = OrderCategoricalLookup.OrderCategoricalLookup(poi_district_lookup)
                 regression_input = RegressionInput.RegressionInput(data_set,
-                                                                   self.order_categorical_lookup,
-                                                                   self.poi_district_lookup)
+                                                                   order_categorical_lookup,
+                                                                   poi_district_lookup)
 
                 if data_set == FileIo.TRAINING_DATA_SET:
 
@@ -221,6 +221,33 @@ class RunRegression(object):
         return cumulative_mean_prediction_error / RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS > \
                best_prediction_error_so_far
 
+
+    """
+    Run regression based on multidimensional scaling
+    """
+    def run_mds_regression(self):
+
+        # Create a square matrix with number of test data rows preserved
+        training_data_square_matrix = numpy.dot(self.training_order_start_end_districts_and_time.T,
+                                                self.training_order_start_end_districts_and_time)
+
+        logging.info("RunRegression: Square matrix shape " + str(training_data_square_matrix.shape))
+
+        # Get eigen values and eigen vectors
+        training_data_eigen_values, training_data_eigen_vectors = linalg.eig(training_data_square_matrix)
+        sorted_index = training_data_eigen_values.argsort()[::-1]
+        sorted_training_data_eigen_values = training_data_eigen_values[sorted_index]
+        sorted_training_data_eigen_vectors = training_data_eigen_vectors[:, sorted_index]
+
+        logging.info("RunRegression: Found " + str(len(sorted_training_data_eigen_values)) + " eigen values.")
+        logging.info("RunRegression: Eigen vectors have length " + str(len(sorted_training_data_eigen_vectors[0])))
+
+        # Plot eigen values
+        plt.plot(sorted_training_data_eigen_values)
+        plt.ylabel('Eigen Values')
+        plt.title('Sorted Eigen Values')
+        plt.show()
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO,
@@ -230,4 +257,5 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
-    run_regression.run_sgd_regression()
+    #run_regression.run_sgd_regression()
+    run_regression.run_mds_regression()
