@@ -1,6 +1,7 @@
 from numpy import linalg
 from sklearn import linear_model
 import FileIo
+import GaussianKernel
 import logging
 import matplotlib.pyplot as plt
 import numpy
@@ -248,6 +249,30 @@ class RunRegression(object):
         plt.title('Sorted Eigen Values')
         plt.show()
 
+
+    """
+    Run kernel regression using a Guassian Kernel
+    """
+    def run_kernel_regression(self):
+
+        predicted_rides = list()
+
+        # Loop through training data and make predictions
+        for testing_data_point_index, testing_data_point in enumerate(self.testing_order_start_end_districts_and_time):
+
+            if testing_data_point_index % 10 == 0:
+                logging.info("RunRegression: Running prediction number " + str(testing_data_point_index) +
+                             " using Gaussian Regression")
+
+            # Make a prediction and add it to list of predictions
+            predicted_rides.append(GaussianKernel.GaussianKernel
+                .predict_query_point_value(training_data_points=self.training_order_start_end_districts_and_time,
+                                           training_data_values=self.training_number_of_orders,
+                                           query_point=testing_data_point))
+
+        logging.info("RunRegression: Mean prediction error using Gaussian Regression is " +
+                     str(numpy.mean((numpy.asarray(predicted_rides) - self.testing_number_of_orders) ** 2)))
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO,
@@ -258,4 +283,5 @@ if __name__ == "__main__":
 
     run_regression = RunRegression()
     #run_regression.run_sgd_regression()
-    run_regression.run_mds_regression()
+    #run_regression.run_mds_regression()
+    run_regression.run_kernel_regression()
