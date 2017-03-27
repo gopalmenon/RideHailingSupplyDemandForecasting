@@ -249,6 +249,7 @@ class RunRegression(object):
     """
     Show Eigen values trend
     """
+    @staticmethod
     def __show_eigen_values_trend(self, eigen_values):
 
         # Plot eigen values

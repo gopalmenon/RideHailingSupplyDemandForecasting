@@ -13,7 +13,7 @@ import unittest
 
 class GaussianKernel():
 
-    GAUSSIAN_DISTRIBUTION_VARIANCE_VALUE = 1.0
+    GAUSSIAN_DISTRIBUTION_VARIANCE_VALUE = 0.01
 
     # This kernel function computes the weight to apply for data point based on its distance from the query point. The
     # part of the gaussian function before the exponent has been dropped as it will cancel out when the weighted
