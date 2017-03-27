@@ -210,7 +210,7 @@ class RunRegression(object):
                           y=self.training_number_of_orders)
         best_predicted_number_of_orders = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
 
-        logging.info("RunRegression: Mean prediction error after cross validation is " +
+        logging.info("RunRegression: Mean squared prediction error after cross validation is " +
                      str(numpy.mean((best_predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
 
     """
@@ -234,7 +234,7 @@ class RunRegression(object):
 
         logging.info("RunRegression: Square matrix shape " + str(training_data_square_matrix.shape))
 
-        # Get eigen values and eigen vectors
+        # Get Eigen values and eigen vectors
         training_data_eigen_values, training_data_eigen_vectors = linalg.eig(training_data_square_matrix)
         sorted_index = training_data_eigen_values.argsort()[::-1]
         sorted_training_data_eigen_values = training_data_eigen_values[sorted_index]
@@ -243,12 +243,19 @@ class RunRegression(object):
         logging.info("RunRegression: Found " + str(len(sorted_training_data_eigen_values)) + " eigen values.")
         logging.info("RunRegression: Eigen vectors have length " + str(len(sorted_training_data_eigen_vectors[0])))
 
+        if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
+            RunRegression.__show_eigen_values_trend(eigen_values=sorted_training_data_eigen_values)
+
+    """
+    Show Eigen values trend
+    """
+    def __show_eigen_values_trend(self, eigen_values):
+
         # Plot eigen values
-        plt.plot(sorted_training_data_eigen_values)
+        plt.plot(eigen_values)
         plt.ylabel('Eigen Values')
         plt.title('Sorted Eigen Values')
         plt.show()
-
 
     """
     Run kernel regression using a Guassian Kernel
@@ -272,7 +279,7 @@ class RunRegression(object):
                                            training_data_values=self.training_number_of_orders,
                                            query_point=testing_data_point))
 
-        logging.info("RunRegression: Mean prediction error using Gaussian Regression is " +
+        logging.info("RunRegression: Mean squared prediction error using Gaussian Regression is " +
                      str(numpy.mean((numpy.asarray(predicted_rides) - self.testing_number_of_orders
                                                     [:RunRegression.ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION]) ** 2)))
 
@@ -285,6 +292,6 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
-    #run_regression.run_sgd_regression()
-    #run_regression.run_mds_regression()
+    run_regression.run_sgd_regression()
+    run_regression.run_mds_regression()
     run_regression.run_kernel_regression()
