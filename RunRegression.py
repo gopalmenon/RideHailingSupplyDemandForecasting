@@ -13,6 +13,7 @@ import PoiDistrictLookup
 import RegressionInput
 import warnings
 
+
 class RunRegression(object):
 
     REGRESSION_TRAINING_INPUT_FILE_NAME = "RegressionTrainingInput.npz"
@@ -250,16 +251,16 @@ class RunRegression(object):
     def __get_dimension_reduced_data_set(self, number_of_dimensions_to_use):
 
         # Get first k eigen vectors
-        first_k_eigen_vectors = self.__get_first_k_eigen_vectors(number_of_dimensions_to_use)
+        first_k_eigen_vectors = self.__get_first_k_weighted_eigen_vectors(number_of_dimensions_to_use)
 
         # Return the training and testing data projections on the eigen vectors
         return numpy.dot(self.training_order_start_end_districts_and_time, first_k_eigen_vectors.T), \
                numpy.dot(self.testing_order_start_end_districts_and_time, first_k_eigen_vectors.T)
 
     """
-    Return first k eigen vectors
+    Return first k weighted eigen vectors
     """
-    def __get_first_k_eigen_vectors(self, number_of_eigen_vectors_to_return):
+    def __get_first_k_weighted_eigen_vectors(self, number_of_eigen_vectors_to_return):
 
         # Create a square matrix with number of test data rows preserved
         training_data_square_matrix = numpy.dot(self.training_order_start_end_districts_and_time.T,
@@ -279,7 +280,17 @@ class RunRegression(object):
         if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
             RunRegression.__show_eigen_values_trend(eigen_values=sorted_training_data_eigen_values)
 
-        return sorted_training_data_eigen_vectors[0:number_of_eigen_vectors_to_return, :]
+        # Select only the first k eigen vectors and eigen values
+        sorted_training_data_eigen_vectors = sorted_training_data_eigen_vectors[0:number_of_eigen_vectors_to_return, :]
+        sorted_training_data_eigen_values = sorted_training_data_eigen_values[0:number_of_eigen_vectors_to_return]
+
+        # Change the weight of the eigen vectors by the eigen values
+        for eigen_value_index, eigen_value in enumerate(sorted_training_data_eigen_values):
+            sorted_training_data_eigen_vectors[eigen_value_index] = \
+                sorted_training_data_eigen_vectors[eigen_value_index] *\
+                sorted_training_data_eigen_values[eigen_value_index]
+
+        return sorted_training_data_eigen_vectors
 
     """
     Show Eigen values trend
@@ -328,6 +339,6 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
-    run_regression.run_sgd_regression()
+    #run_regression.run_sgd_regression()
     run_regression.run_mds_regression()
-    run_regression.run_kernel_regression()
+    #run_regression.run_kernel_regression()
