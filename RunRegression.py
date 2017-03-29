@@ -1,5 +1,8 @@
 from numpy import linalg
 from sklearn import linear_model
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn import svm
 import FileIo
 import GaussianKernel
 import logging
@@ -17,6 +20,7 @@ class RunRegression(object):
     MAXIMUM_NUMBER_OF_JOBS = -1
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
     ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
+    NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE = 10
 
     def __init__(self):
 
@@ -228,6 +232,35 @@ class RunRegression(object):
     """
     def run_mds_regression(self):
 
+        training_data, testing_data = \
+            self.__get_dimension_reduced_data_set(RunRegression.NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE)
+
+        regressor = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth = 1, random_state = 0,
+                                                 loss = 'ls').fit(training_data, self.training_number_of_orders)
+
+        mean_square_prediction_error = \
+            mean_squared_error(self.testing_number_of_orders, regressor.predict(testing_data))
+
+        logging.info("RunRegression: Mean squared prediction error for gradient boosted regression is " +
+                     str(mean_square_prediction_error))
+
+    """
+    Reduce dimensionality of data by finding projections onto the first k eigen vectors
+    """
+    def __get_dimension_reduced_data_set(self, number_of_dimensions_to_use):
+
+        # Get first k eigen vectors
+        first_k_eigen_vectors = self.__get_first_k_eigen_vectors(number_of_dimensions_to_use)
+
+        # Return the training and testing data projections on the eigen vectors
+        return numpy.dot(self.training_order_start_end_districts_and_time, first_k_eigen_vectors.T), \
+               numpy.dot(self.testing_order_start_end_districts_and_time, first_k_eigen_vectors.T)
+
+    """
+    Return first k eigen vectors
+    """
+    def __get_first_k_eigen_vectors(self, number_of_eigen_vectors_to_return):
+
         # Create a square matrix with number of test data rows preserved
         training_data_square_matrix = numpy.dot(self.training_order_start_end_districts_and_time.T,
                                                 self.training_order_start_end_districts_and_time)
@@ -246,11 +279,13 @@ class RunRegression(object):
         if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
             RunRegression.__show_eigen_values_trend(eigen_values=sorted_training_data_eigen_values)
 
+        return sorted_training_data_eigen_vectors[0:number_of_eigen_vectors_to_return, :]
+
     """
     Show Eigen values trend
     """
     @staticmethod
-    def __show_eigen_values_trend(self, eigen_values):
+    def __show_eigen_values_trend(eigen_values):
 
         # Plot eigen values
         plt.plot(eigen_values)
