@@ -2,7 +2,6 @@ from numpy import linalg
 from sklearn import linear_model
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn import svm
 import FileIo
 import GaussianKernel
 import logging
@@ -236,13 +235,23 @@ class RunRegression(object):
         training_data, testing_data = \
             self.__get_dimension_reduced_data_set(RunRegression.NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE)
 
-        regressor = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth = 1, random_state = 0,
-                                                 loss = 'ls').fit(training_data, self.training_number_of_orders)
+        regressor = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth = 1, random_state=0,
+                                                 loss='ls').fit(training_data, self.training_number_of_orders)
 
         mean_square_prediction_error = \
             mean_squared_error(self.testing_number_of_orders, regressor.predict(testing_data))
 
         logging.info("RunRegression: Mean squared prediction error for gradient boosted regression is " +
+                     str(mean_square_prediction_error))
+
+        regressor = linear_model.Ridge (alpha = .5)\
+            .fit(training_data, self.training_number_of_orders)
+
+        mean_square_prediction_error = \
+            mean_squared_error(self.testing_number_of_orders,
+                               regressor.predict(testing_data))
+
+        logging.info("RunRegression: Mean squared prediction error for Ridge regression is " +
                      str(mean_square_prediction_error))
 
     """
@@ -339,6 +348,6 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
-    #run_regression.run_sgd_regression()
+    run_regression.run_sgd_regression()
     run_regression.run_mds_regression()
-    #run_regression.run_kernel_regression()
+    run_regression.run_kernel_regression()
