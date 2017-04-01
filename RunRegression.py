@@ -92,6 +92,25 @@ class RunRegression(object):
                     logging.info("RunRegression: Loaded " + str(len(self.testing_number_of_orders)) +
                                  " test data rows")
 
+        if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
+            self.__show_prediction_values_boxplots()
+
+    """
+    Show boxplots for number of rides and order price
+    """
+    def __show_prediction_values_boxplots(self):
+
+        boxplots_data = [self.training_number_of_orders,
+                         self.training_order_median_price,
+                         self.testing_number_of_orders,
+                         self.testing_order_median_price]
+
+        # Show boxplots
+        plt.figure()
+        plt.boxplot(boxplots_data)
+        plt.xticks([1, 2, 3, 4], ['Train Orders', 'Train Price', 'Test Orders', 'Test Price'])
+        plt.show()
+
     """
     Run sgd regression
     """
