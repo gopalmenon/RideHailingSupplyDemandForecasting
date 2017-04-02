@@ -114,7 +114,13 @@ class RunRegression(object):
     """
     Run sgd regression
     """
-    def run_sgd_regression(self):
+    @staticmethod
+    def run_sgd_regression(training_order_start_end_districts_and_time,
+                           training_order_median_price,
+                           training_number_of_orders,
+                           testing_order_start_end_districts_and_time,
+                           testing_order_median_price,
+                           testing_number_of_orders):
 
         losses = ["squared_loss"]
         penalties = ["none", "l2", "l1", "elasticnet"]
@@ -152,11 +158,11 @@ class RunRegression(object):
                                     continue
 
                                 training_start_row = fold_number * \
-                                                     len(self.training_order_start_end_districts_and_time) // \
+                                                     len(training_order_start_end_districts_and_time) // \
                                                      RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
                                 training_end_row = (fold_number + 1) * \
-                                                   len(self.training_order_start_end_districts_and_time) // \
+                                                   len(training_order_start_end_districts_and_time) // \
                                                     RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
                                 logging.info("RunRegression: " + str(RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS) +
@@ -168,24 +174,24 @@ class RunRegression(object):
 
                                 # Train regression model
                                 sgd_regressor\
-                                   .partial_fit(X=self.training_order_start_end_districts_and_time[training_start_row :
+                                   .partial_fit(X=training_order_start_end_districts_and_time[training_start_row :
                                                                                                    training_end_row],
-                                                y=self.training_number_of_orders[training_start_row:training_end_row])
+                                                y=training_number_of_orders[training_start_row:training_end_row])
 
                             testing_start_row = testing_fold_number * \
-                                                len(self.testing_order_start_end_districts_and_time) // \
+                                                len(testing_order_start_end_districts_and_time) // \
                                                  RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
                             testing_end_row = (testing_fold_number + 1 )* \
-                                                len(self.testing_order_start_end_districts_and_time) // \
+                                                len(testing_order_start_end_districts_and_time) // \
                                                  RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS
 
                             predicted_number_of_orders = sgd_regressor\
-                                .predict(self.testing_order_start_end_districts_and_time[testing_start_row :
+                                .predict(testing_order_start_end_districts_and_time[testing_start_row :
                                                                                          testing_end_row])
 
                             current_ride_prediction_error = numpy.mean((predicted_number_of_orders -
-                                                                        self.testing_number_of_orders
+                                                                        testing_number_of_orders
                                                                         [testing_start_row : testing_end_row]) ** 2)
 
                             logging.info("RunRegression: Prediction error for fold " + str(testing_fold_number) +
@@ -229,12 +235,12 @@ class RunRegression(object):
                                                   eta0=best_initial_learning_rate,
                                                   learning_rate=best_learning_rate)
 
-        sgd_regressor.fit(X=self.training_order_start_end_districts_and_time,
-                          y=self.training_number_of_orders)
-        best_predicted_number_of_orders = sgd_regressor.predict(self.testing_order_start_end_districts_and_time)
+        sgd_regressor.fit(X=training_order_start_end_districts_and_time,
+                          y=training_number_of_orders)
+        best_predicted_number_of_orders = sgd_regressor.predict(testing_order_start_end_districts_and_time)
 
         logging.info("RunRegression: Mean squared prediction error after cross validation is " +
-                     str(numpy.mean((best_predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
+                     str(numpy.mean((best_predicted_number_of_orders - testing_number_of_orders) ** 2)))
 
     """
     Check if mean prediction error is to high to qualify as the best so far
@@ -367,6 +373,11 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
-    run_regression.run_sgd_regression()
+    RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
+                                     run_regression.training_order_median_price,
+                                     run_regression.training_number_of_orders,
+                                     run_regression.testing_order_start_end_districts_and_time,
+                                     run_regression.testing_order_median_price,
+                                     run_regression.testing_number_of_orders)
     run_regression.run_mds_regression()
     run_regression.run_kernel_regression()
