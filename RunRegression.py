@@ -1,5 +1,6 @@
 from numpy import linalg
 from sklearn import linear_model
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
 import FileIo
@@ -250,6 +251,20 @@ class RunRegression(object):
 
         return cumulative_mean_prediction_error / RunRegression.NUMBER_OF_CROSS_VALIDATION_FOLDS > \
                best_prediction_error_so_far
+
+    """
+    Run kernel ridge regression
+    """
+    def run_kernel_ridge_regression(self):
+
+        logging.info("RunRegression: Starting kernel ridge regression")
+
+        kernel_ridge_regressor = KernelRidge(alpha=1.0, kernel=GaussianKernel.GaussianKernel.get_kernel_value)
+        kernel_ridge_regressor.fit(self.training_order_start_end_districts_and_time, self.training_number_of_orders)
+        predicted_number_of_orders = kernel_ridge_regressor.predict(self.testing_order_start_end_districts_and_time)
+
+        logging.info("RunRegression: Mean squared prediction error for kernel ridge regression is " +
+                     str(numpy.mean((predicted_number_of_orders - self.testing_number_of_orders) ** 2)))
 
 
     """

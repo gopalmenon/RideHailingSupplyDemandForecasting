@@ -1,4 +1,6 @@
 from math import exp
+from math import sqrt
+from math import pi
 import numpy
 import unittest
 
@@ -15,14 +17,22 @@ class GaussianKernel():
 
     GAUSSIAN_DISTRIBUTION_VARIANCE_VALUE = 0.01
 
+    GAUSSIAN_DISTRIBUTION_PREFIX = 1/ (sqrt(2 * pi) * GAUSSIAN_DISTRIBUTION_VARIANCE_VALUE)
+
     # This kernel function computes the weight to apply for data point based on its distance from the query point. The
     # part of the gaussian function before the exponent has been dropped as it will cancel out when the weighted
     # average is taken.
     @staticmethod
-    def kernel(data_point_vector, query_point_vector):
+    def get_kernel_no_prefix(data_point_vector, query_point_vector):
 
         return exp(-1 * numpy.sum(numpy.square(data_point_vector - query_point_vector)) /
                    (2 * GaussianKernel.GAUSSIAN_DISTRIBUTION_VARIANCE_VALUE))
+
+    # This kernel function computes the weight to apply for data point based on its distance from the query point.
+    @staticmethod
+    def get_kernel_value(data_point_vector, query_point_vector):
+        return GaussianKernel.GAUSSIAN_DISTRIBUTION_PREFIX * \
+               GaussianKernel.get_kernel_no_prefix(data_point_vector, query_point_vector)
 
     # Return a prediction for the value at the query point by using the Gaussian Kernel
     @staticmethod
@@ -34,8 +44,8 @@ class GaussianKernel():
         # Loop through each training data point and its value and compute a weighted average
         for data_point_index, data_point in enumerate(training_data_points):
 
-            kernel_output = GaussianKernel.kernel(data_point_vector=training_data_points[data_point_index],
-                                                  query_point_vector=query_point)
+            kernel_output = GaussianKernel.get_kernel_no_prefix(data_point_vector=training_data_points[data_point_index]
+                                                                , query_point_vector=query_point)
 
             prediction_weighted_value += kernel_output * training_data_values[data_point_index]
             prediction_weighted_sum += kernel_output
