@@ -3,6 +3,7 @@ from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.decomposition.truncated_svd import TruncatedSVD
 import FileIo
 import GaussianKernel
 import logging
@@ -379,6 +380,30 @@ class RunRegression(object):
                      str(numpy.mean((numpy.asarray(predicted_rides) - self.testing_number_of_orders
                                                     [:RunRegression.ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION]) ** 2)))
 
+    def outliersPriceOrders(self,order,price):
+        a = plt.boxplot([order,price])
+        idx = set()
+        idxSet = set(numpy.arange(len(self.training_order_start_end_districts_and_time)))
+        for d in a['fliers']:
+            print(len(d.get_ydata()))
+            for point in d.get_ydata():
+                pIdx = numpy.where((order == point)|(price==point))
+                for rIdx in pIdx[0]:
+                    idx.add(rIdx)
+        logging.info("done with loop")
+        idxKeep = list(idxSet.difference(idx))
+        print(len(idxKeep))
+        self.training_order_start_end_districts_and_time = self.training_order_start_end_districts_and_time[[idxKeep],:]
+        self.training_number_of_orders = self.training_number_of_orders[[idxKeep]]
+        self.training_order_median_price = self.training_order_median_price[[idxKeep]]
+        self.training_order_start_end_districts_and_time = self.training_order_start_end_districts_and_time.reshape(self.training_order_start_end_districts_and_time.shape[1:])
+    
+    def outliersSvdReduction(self):
+        svd = TruncatedSVD(n_components=1)
+        ordersSvd = svd.fit_transform(self.training_order_start_end_districts_and_time, self.training_number_of_orders)
+        priceSvd = svd.fit_transform(self.training_order_start_end_districts_and_time, self.training_order_median_price)
+        self.outliersPriceOrders(ordersSvd,priceSvd)
+        
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO,
@@ -388,6 +413,7 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
+    run_regression.outliersSvdReduction()
     RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
                                      run_regression.training_order_median_price,
                                      run_regression.training_number_of_orders,
