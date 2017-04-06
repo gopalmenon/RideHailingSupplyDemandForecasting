@@ -3,6 +3,7 @@ from sklearn import linear_model
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.decomposition.truncated_svd import TruncatedSVD
 import FileIo
 import GaussianKernel
@@ -23,6 +24,7 @@ class RunRegression(object):
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
     ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
     NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE = 10
+    DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION = 2
 
     def __init__(self):
 
@@ -403,7 +405,25 @@ class RunRegression(object):
         ordersSvd = svd.fit_transform(self.training_order_start_end_districts_and_time, self.training_number_of_orders)
         priceSvd = svd.fit_transform(self.training_order_start_end_districts_and_time, self.training_order_median_price)
         self.outliersPriceOrders(ordersSvd,priceSvd)
-        
+
+    """
+    Run non-linear polynomial regression
+    """
+    def run_non_linear_polynomial_regression(self, polynomial_degree):
+
+        logging.info("RunRegression: Convert features to polynomial of degree " +
+                     str(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION) +
+                     " before running linear regression.")
+        polynomial_features = PolynomialFeatures(degree=2)
+
+        RunRegression\
+            .run_sgd_regression(polynomial_features.fit_transform(self.training_order_start_end_districts_and_time),
+                                self.training_order_median_price,
+                                self.training_number_of_orders,
+                                polynomial_features.fit_transform(self.testing_order_start_end_districts_and_time),
+                                self.testing_order_median_price,
+                                self.testing_number_of_orders)
+
 if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO,
@@ -413,6 +433,7 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
+    #run_regression.run_non_linear_polynomial_regression(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION)
     run_regression.outliersSvdReduction()
     RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
                                      run_regression.training_order_median_price,
