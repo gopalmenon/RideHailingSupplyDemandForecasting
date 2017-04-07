@@ -9,6 +9,7 @@ import FileIo
 import GaussianKernel
 import logging
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy
 import OrderCategoricalLookup
 import PoiDistrictLookup
@@ -24,7 +25,9 @@ class RunRegression(object):
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
     ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
     NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE = 10
+    NUMBER_OF_EIGEN_VECTORS_FOR_VISUALIZATION = 2
     DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION = 2
+    NUMBER_OF_DISTRICTS_WITH_TRAFFIC_AND_POI = 66
 
     def __init__(self):
 
@@ -271,6 +274,104 @@ class RunRegression(object):
 
 
     """
+    Run_data_visualization using first two eigen vectors
+    """
+    def run_data_visualization_using_eigen_vectors(self):
+
+        training_data, testing_data = \
+            self.__get_dimension_reduced_data_set(RunRegression.NUMBER_OF_EIGEN_VECTORS_FOR_VISUALIZATION)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('Eigen Vector 1 Direction')
+        ax.set_xticks([])
+        ax.set_ylabel('Eigen Vector 2 Direction')
+        ax.set_yticks([])
+        ax.set_zlabel('Number of Rides')
+        ax.set_title('Number of Rides for first 500K Training Points')
+        ax.scatter(training_data[0:500000,0], training_data[0:500000,1], self.training_number_of_orders[0:500000])
+        plt.show()
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_xlabel('Eigen Vector 1 Direction')
+        ax.set_xticks([])
+        ax.set_ylabel('Eigen Vector 2 Direction')
+        ax.set_yticks([])
+        ax.set_zlabel('Median Ride Price')
+        ax.set_title('Median Ride Price for first 500K Training Points')
+        ax.scatter(training_data[0:500000,0], training_data[0:500000,1], self.training_order_median_price[0:500000])
+        plt.show()
+
+    """
+    Run_data_visualization for start/end district and day of week
+    """
+    def run_data_visualization_for_start_loc_and_weekday(self, run_for_start_district):
+
+        district_and_weekday_list = list()
+        district_and_timeslot_list = list()
+
+        for key_value in self.training_order_start_end_districts_and_time:
+
+            if run_for_start_district:
+                start_offset_for_district = 0
+            else:
+                start_offset_for_district = RunRegression.NUMBER_OF_DISTRICTS_WITH_TRAFFIC_AND_POI
+            end_offset_for_district = start_offset_for_district + RunRegression.NUMBER_OF_DISTRICTS_WITH_TRAFFIC_AND_POI
+
+            district_array = key_value[start_offset_for_district:end_offset_for_district]
+
+            start_offset_for_day_of_week = 2 * RunRegression.NUMBER_OF_DISTRICTS_WITH_TRAFFIC_AND_POI
+            end_offset_for_day_of_week = start_offset_for_day_of_week + \
+                                         OrderCategoricalLookup.OrderCategoricalLookup.DAYS_IN_WEEK
+
+            start_offset_for_timeslot = end_offset_for_day_of_week + 1
+            timeslot_array = key_value[start_offset_for_timeslot : ]
+            timeslot_index = list(timeslot_array).index(1)
+
+            day_of_week_array = key_value[start_offset_for_day_of_week : end_offset_for_day_of_week]
+
+            district_index = list(district_array).index(1)
+            day_of_week_index = list(day_of_week_array).index(1)
+
+            district_and_weekday_list.append([district_index, day_of_week_index])
+            district_and_timeslot_list.append([district_index, timeslot_index])
+
+        district_and_weekday_array = numpy.asarray(district_and_weekday_list)
+        district_and_timeslot_array = numpy.asarray(district_and_timeslot_list)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        if run_for_start_district:
+            ax.set_xlabel('Start District')
+        else:
+            ax.set_xlabel('End District')
+        ax.set_xticks([])
+        ax.set_ylabel('Day of Week')
+        ax.set_zlabel('Number of Rides')
+        ax.set_title('Number of Rides for first 500K Training Points')
+        ax.scatter(district_and_weekday_array[0:500000,0],
+                   district_and_weekday_array[0:500000,1],
+                   self.training_number_of_orders[0:500000])
+        plt.show()
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        if run_for_start_district:
+            ax.set_xlabel('Start District')
+        else:
+            ax.set_xlabel('End District')
+        ax.set_xticks([])
+        ax.set_ylabel('Time Slot')
+        ax.set_zlabel('Number of Rides')
+        ax.set_title('Number of Rides for first 500K Training Points')
+        ax.scatter(district_and_timeslot_array[0:500000,0],
+                   district_and_timeslot_array[0:500000,1],
+                   self.training_number_of_orders[0:500000])
+        plt.show()
+
+
+    """
     Run regression based on multidimensional scaling
     """
     def run_mds_regression(self):
@@ -398,7 +499,8 @@ class RunRegression(object):
         self.training_order_start_end_districts_and_time = self.training_order_start_end_districts_and_time[[idxKeep],:]
         self.training_number_of_orders = self.training_number_of_orders[[idxKeep]]
         self.training_order_median_price = self.training_order_median_price[[idxKeep]]
-        self.training_order_start_end_districts_and_time = self.training_order_start_end_districts_and_time.reshape(self.training_order_start_end_districts_and_time.shape[1:])
+        self.training_order_start_end_districts_and_time = self.training_order_start_end_districts_and_time\
+            .reshape(self.training_order_start_end_districts_and_time.shape[1:])
     
     def outliersSvdReduction(self):
         svd = TruncatedSVD(n_components=1)
@@ -414,13 +516,18 @@ class RunRegression(object):
         logging.info("RunRegression: Convert features to polynomial of degree " +
                      str(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION) +
                      " before running linear regression.")
+
         polynomial_features = PolynomialFeatures(degree=2)
+        polynomial_features_training_data_keys \
+            = polynomial_features.fit_transform(self.training_order_start_end_districts_and_time)
+        polynomial_features_testing_data_keys \
+            = polynomial_features.fit_transform(self.testing_order_start_end_districts_and_time)
 
         RunRegression\
-            .run_sgd_regression(polynomial_features.fit_transform(self.training_order_start_end_districts_and_time),
+            .run_sgd_regression(polynomial_features_training_data_keys,
                                 self.training_order_median_price,
                                 self.training_number_of_orders,
-                                polynomial_features.fit_transform(self.testing_order_start_end_districts_and_time),
+                                polynomial_features_testing_data_keys,
                                 self.testing_order_median_price,
                                 self.testing_number_of_orders)
 
@@ -433,6 +540,11 @@ if __name__ == "__main__":
     warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
 
     run_regression = RunRegression()
+
+    if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
+        run_regression.run_data_visualization_using_eigen_vectors()
+        run_regression.run_data_visualization_for_start_loc_and_weekday(run_for_start_district=True)
+
     #run_regression.run_non_linear_polynomial_regression(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION)
     run_regression.outliersSvdReduction()
     RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
