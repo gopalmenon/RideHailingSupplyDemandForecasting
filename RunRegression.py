@@ -26,7 +26,7 @@ class RunRegression(object):
     ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
     NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE = 10
     NUMBER_OF_EIGEN_VECTORS_FOR_VISUALIZATION = 2
-    DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION = 2
+    DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION = 4
     NUMBER_OF_DISTRICTS_WITH_TRAFFIC_AND_POI = 66
 
     def __init__(self):
@@ -514,14 +514,15 @@ class RunRegression(object):
     def run_non_linear_polynomial_regression(self, polynomial_degree):
 
         logging.info("RunRegression: Convert features to polynomial of degree " +
-                     str(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION) +
+                     str(polynomial_degree) +
                      " before running linear regression.")
 
-        polynomial_features = PolynomialFeatures(degree=2)
-        polynomial_features_training_data_keys \
-            = polynomial_features.fit_transform(self.training_order_start_end_districts_and_time)
-        polynomial_features_testing_data_keys \
-            = polynomial_features.fit_transform(self.testing_order_start_end_districts_and_time)
+        training_data, testing_data = \
+            self.__get_dimension_reduced_data_set(RunRegression.NUMBER_OF_TOP_EIGEN_VECTORS_TO_USE)
+
+        polynomial_features = PolynomialFeatures(degree=polynomial_degree)
+        polynomial_features_training_data_keys = polynomial_features.fit_transform(training_data)
+        polynomial_features_testing_data_keys = polynomial_features.fit_transform(testing_data)
 
         RunRegression\
             .run_sgd_regression(polynomial_features_training_data_keys,
@@ -545,7 +546,7 @@ if __name__ == "__main__":
         run_regression.run_data_visualization_using_eigen_vectors()
         run_regression.run_data_visualization_for_start_loc_and_weekday(run_for_start_district=True)
 
-    #run_regression.run_non_linear_polynomial_regression(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION)
+    run_regression.run_non_linear_polynomial_regression(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION)
     run_regression.outliersSvdReduction()
     RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
                                      run_regression.training_order_median_price,
