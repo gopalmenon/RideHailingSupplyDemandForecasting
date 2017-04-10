@@ -21,6 +21,9 @@ class RunRegression(object):
 
     REGRESSION_TRAINING_INPUT_FILE_NAME = "RegressionTrainingInput.npz"
     REGRESSION_TESTING_INPUT_FILE_NAME = "RegressionTestingInput.npz"
+    DISTRICTS_VIZ_TEXT_FILE = "DistrictsViz.txt"
+    TIMESLOTS_VIZ_TEXT_FILE = "TimeslotsViz.txt"
+    RIDES_VIZ_TEXT_FILE = "RidesViz.txt"
     MAXIMUM_NUMBER_OF_JOBS = -1
     NUMBER_OF_CROSS_VALIDATION_FOLDS = 5
     ROWS_TO_USE_FOR_GAUSSIAN_KERNEL_REGRESSION = 15
@@ -370,6 +373,28 @@ class RunRegression(object):
                    self.training_number_of_orders[0:500000])
         plt.show()
 
+        run_regression.__store_district_timeslot_visulaization_data(district_and_timeslot_array)
+
+
+    """
+    Store district, timeslots and rides data in a test file for display using Octave
+    """
+    def __store_district_timeslot_visulaization_data(self, district_and_timeslot_array):
+
+        # Open files for write access and overwrite existing data
+        try:
+            with open(RunRegression.DISTRICTS_VIZ_TEXT_FILE, "w") as districts_file, \
+                 open(RunRegression.TIMESLOTS_VIZ_TEXT_FILE, "w") as timeslots_file, \
+                 open(RunRegression.RIDES_VIZ_TEXT_FILE, "w") as rides_file:
+
+                # Loop through each record and write to text files
+                for array_index, data_row in enumerate(district_and_timeslot_array):
+                    districts_file.write(str(data_row[0])+'\n')
+                    timeslots_file.write(str(data_row[1])+'\n')
+                    rides_file.write(str(self.training_number_of_orders[array_index])+'\n')
+
+        except IOError:
+            logging.critical("IO Error while writing to vizulization files")
 
     """
     Run regression based on multidimensional scaling
