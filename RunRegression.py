@@ -423,6 +423,15 @@ class RunRegression(object):
         logging.info("RunRegression: Mean squared prediction error for Ridge regression is " +
                      str(mean_square_prediction_error))
 
+        regressor = linear_model.Lasso (alpha = .5)\
+            .fit(training_data, self.training_number_of_orders)
+
+        mean_square_prediction_error = \
+            mean_squared_error(self.testing_number_of_orders,
+                               regressor.predict(testing_data))
+
+        logging.info("RunRegression: Mean squared prediction error for Lasso regression is " +
+                     str(mean_square_prediction_error))
     """
     Reduce dimensionality of data by finding projections onto the first k eigen vectors
     """
@@ -478,7 +487,7 @@ class RunRegression(object):
 
         # Plot eigen values
         plt.plot(eigen_values)
-        plt.ylabel('Eigen Values')
+        plt.ylabel('Eigen Value')
         plt.title('Sorted Eigen Values')
         plt.show()
 
@@ -559,7 +568,7 @@ class RunRegression(object):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                         # filename='regression_run.log', # log to this file
                         format='%(asctime)s %(message)s')  # include timestamp
 
@@ -567,11 +576,13 @@ if __name__ == "__main__":
 
     run_regression = RunRegression()
 
-    if logging.getLogger().getEffectiveLevel() == logging.DEBUG:
+    if logging.getLogger().getEffectiveLevel() == logging.INFO:
         run_regression.run_data_visualization_using_eigen_vectors()
         run_regression.run_data_visualization_for_start_loc_and_weekday(run_for_start_district=True)
 
-    run_regression.run_non_linear_polynomial_regression(RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION)
+    for polynomial_degree in range(2, RunRegression.DEGREE_OF_POLYNOMIAL_FOR_NON_LINEAR_REGRESSION+1):
+        run_regression.run_non_linear_polynomial_regression(polynomial_degree)
+
     run_regression.outliersSvdReduction()
     RunRegression.run_sgd_regression(run_regression.training_order_start_end_districts_and_time,
                                      run_regression.training_order_median_price,
